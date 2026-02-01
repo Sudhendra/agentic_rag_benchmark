@@ -1,0 +1,9 @@
+Answer the question based on the provided context. Be concise and direct.
+Give only the answer without any explanation.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:

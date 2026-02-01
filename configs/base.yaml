@@ -1,0 +1,37 @@
+# Base configuration - all other configs inherit from this
+experiment:
+  name: "base"
+  seed: 42
+  output_dir: "results"
+
+llm:
+  provider: "openai"  # openai, anthropic
+  model: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 1024
+
+retrieval:
+  method: "hybrid"  # bm25, dense, hybrid
+  top_k: 5
+  bm25_weight: 0.5
+  dense_weight: 0.5
+  embedding_model: "text-embedding-3-small"
+
+data:
+  dataset: "hotpotqa"
+  setting: "distractor"
+  split: "validation"
+  subset_size: 500  # null for full dataset
+
+evaluation:
+  max_concurrency: 5
+  compute_supporting_facts: false
+  save_predictions: true
+
+cache:
+  enabled: true
+  path: ".cache/llm_cache.db"
+
+logging:
+  level: "INFO"
+  file: "logs/experiment.log"
