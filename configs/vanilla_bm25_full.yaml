@@ -1,0 +1,10 @@
+inherits: base.yaml
+
+experiment:
+  name: "vanilla_bm25_full"
+
+retrieval:
+  method: "bm25"
+
+data:
+  subset_size: null  # Full validation set

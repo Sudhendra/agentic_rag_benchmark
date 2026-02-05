@@ -1,0 +1,11 @@
+inherits: base.yaml
+
+experiment:
+  name: "vanilla_dense_full"
+
+retrieval:
+  method: "dense"
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: null  # Full validation set
