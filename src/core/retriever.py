@@ -1,14 +1,13 @@
 """Abstract base class for retriever implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from .types import Document, RetrievalResult
 
 
 class BaseRetriever(ABC):
     """Abstract base class for retrievers.
-    
+
     All retriever implementations (BM25, Dense, Hybrid) inherit from this.
     """
 
@@ -16,7 +15,7 @@ class BaseRetriever(ABC):
         """Initialize the retriever."""
         self.is_indexed = False
         self.corpus_size = 0
-        self._corpus: Optional[list[Document]] = None
+        self._corpus: list[Document] | None = None
 
     @abstractmethod
     async def retrieve(
@@ -26,12 +25,12 @@ class BaseRetriever(ABC):
         top_k: int = 5,
     ) -> RetrievalResult:
         """Retrieve relevant documents for a query.
-        
+
         Args:
             query: Search query string
             corpus: List of documents to search
             top_k: Number of documents to retrieve
-            
+
         Returns:
             RetrievalResult with documents and scores
         """
@@ -40,9 +39,9 @@ class BaseRetriever(ABC):
     @abstractmethod
     async def index(self, corpus: list[Document]) -> None:
         """Pre-index a corpus for faster retrieval.
-        
+
         This should be called before retrieve() for optimal performance.
-        
+
         Args:
             corpus: List of documents to index
         """
@@ -55,15 +54,15 @@ class BaseRetriever(ABC):
         top_k: int = 5,
     ) -> list[RetrievalResult]:
         """Retrieve for multiple queries.
-        
+
         Default implementation calls retrieve() sequentially.
         Subclasses can override for parallel/batch optimization.
-        
+
         Args:
             queries: List of search queries
             corpus: List of documents to search
             top_k: Number of documents per query
-            
+
         Returns:
             List of RetrievalResult objects
         """
@@ -75,10 +74,10 @@ class BaseRetriever(ABC):
 
     def _ensure_indexed(self, corpus: list[Document]) -> bool:
         """Check if corpus needs re-indexing.
-        
+
         Args:
             corpus: Current corpus
-            
+
         Returns:
             True if re-indexing is needed
         """

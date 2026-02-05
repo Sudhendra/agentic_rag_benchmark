@@ -1,7 +1,6 @@
 """Hybrid retrieval combining BM25 and Dense using Reciprocal Rank Fusion."""
 
 import time
-from typing import Optional
 
 from ..core.retriever import BaseRetriever
 from ..core.types import Document, RetrievalResult

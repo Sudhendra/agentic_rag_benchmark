@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -25,7 +25,7 @@ def load_resolved_config(path: Path) -> dict[str, Any]:
     return load_config(path)
 
 
-def _apply_overrides(config: dict[str, Any], subset_size: Optional[int]) -> dict[str, Any]:
+def _apply_overrides(config: dict[str, Any], subset_size: int | None) -> dict[str, Any]:
     if subset_size is not None:
         config.setdefault("data", {})["subset_size"] = subset_size
     return config

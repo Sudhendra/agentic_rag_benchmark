@@ -2,7 +2,6 @@
 
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import openai
 from dotenv import load_dotenv
@@ -25,11 +24,11 @@ class BaseLLMClient(ABC):
     def __init__(
         self,
         model: str,
-        cache: Optional[SQLiteCache] = None,
+        cache: SQLiteCache | None = None,
         track_costs: bool = True,
     ):
         """Initialize the LLM client.
-        
+
         Args:
             model: Model identifier (e.g., 'gpt-4o-mini')
             cache: Optional SQLite cache for responses
@@ -38,7 +37,7 @@ class BaseLLMClient(ABC):
         self.model = model
         self.cache = cache
         self.track_costs = track_costs
-        
+
         # Statistics
         self.total_tokens = 0
         self.total_input_tokens = 0
@@ -52,16 +51,16 @@ class BaseLLMClient(ABC):
         messages: list[dict],
         temperature: float = 0.0,
         max_tokens: int = 1024,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> tuple[str, int, float]:
         """Generate a response from the LLM.
-        
+
         Args:
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature (0.0 = deterministic)
             max_tokens: Maximum tokens to generate
             stop: Optional stop sequences
-            
+
         Returns:
             Tuple of (response_text, tokens_used, cost_usd)
         """
@@ -72,7 +71,7 @@ class BaseLLMClient(ABC):
         messages: list[dict],
         temperature: float,
         max_tokens: int,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> str:
         """Create a deterministic cache key for a request."""
         data = {
@@ -125,12 +124,12 @@ class OpenAIClient(BaseLLMClient):
     def __init__(
         self,
         model: str = "gpt-4o-mini",
-        cache: Optional[SQLiteCache] = None,
+        cache: SQLiteCache | None = None,
         track_costs: bool = True,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """Initialize OpenAI client.
-        
+
         Args:
             model: OpenAI model to use
             cache: Optional response cache
@@ -138,13 +137,11 @@ class OpenAIClient(BaseLLMClient):
             api_key: Optional API key (defaults to OPENAI_API_KEY env var)
         """
         super().__init__(model, cache, track_costs)
-        
+
         api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError(
-                "OpenAI API key not found. Set OPENAI_API_KEY environment variable."
-            )
-        
+            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
+
         self.client = openai.AsyncOpenAI(api_key=api_key)
 
     def _calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
@@ -164,16 +161,16 @@ class OpenAIClient(BaseLLMClient):
         messages: list[dict],
         temperature: float = 0.0,
         max_tokens: int = 1024,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> tuple[str, int, float]:
         """Generate a response from OpenAI.
-        
+
         Args:
             messages: List of message dicts
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
             stop: Optional stop sequences
-            
+
         Returns:
             Tuple of (response_text, tokens_used, cost_usd)
         """
@@ -225,11 +222,11 @@ class OpenAIClient(BaseLLMClient):
         model: str = "text-embedding-3-small",
     ) -> tuple[list[list[float]], int, float]:
         """Generate embeddings for texts.
-        
+
         Args:
             texts: List of texts to embed
             model: Embedding model to use
-            
+
         Returns:
             Tuple of (embeddings, tokens_used, cost_usd)
         """
@@ -237,34 +234,34 @@ class OpenAIClient(BaseLLMClient):
             model=model,
             input=texts,
         )
-        
+
         embeddings = [e.embedding for e in response.data]
         tokens_used = response.usage.total_tokens
-        
+
         pricing = self.EMBEDDING_PRICING.get(model, 0.02)
         cost = (tokens_used / 1_000_000) * pricing
-        
+
         if self.track_costs:
             self.total_tokens += tokens_used
             self.total_cost += cost
-        
+
         return embeddings, tokens_used, cost
 
 
 def create_llm_client(
     provider: str = "openai",
-    model: Optional[str] = None,
-    cache: Optional[SQLiteCache] = None,
+    model: str | None = None,
+    cache: SQLiteCache | None = None,
     **kwargs,
 ) -> BaseLLMClient:
     """Factory function to create an LLM client.
-    
+
     Args:
         provider: 'openai' or 'anthropic'
         model: Model identifier (uses defaults if not specified)
         cache: Optional response cache
         **kwargs: Additional arguments for the client
-        
+
     Returns:
         Configured LLM client
     """

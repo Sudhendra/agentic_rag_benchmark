@@ -1,7 +1,5 @@
 """HotpotQA dataset loader."""
 
-from typing import Optional
-
 from datasets import load_dataset
 
 from ..core.types import Document, Question, QuestionType
@@ -9,7 +7,7 @@ from ..core.types import Document, Question, QuestionType
 
 class HotpotQALoader:
     """Loader for the HotpotQA multi-hop QA dataset.
-    
+
     Supports two settings:
     - distractor: 10 paragraphs provided (2 gold + 8 distractors)
     - fullwiki: Open retrieval from Wikipedia (not supported yet)
@@ -19,10 +17,10 @@ class HotpotQALoader:
         self,
         setting: str = "distractor",
         split: str = "validation",
-        subset_size: Optional[int] = None,
+        subset_size: int | None = None,
     ):
         """Initialize the loader.
-        
+
         Args:
             setting: 'distractor' or 'fullwiki'
             split: Dataset split ('train' or 'validation')
@@ -34,10 +32,10 @@ class HotpotQALoader:
 
     def _parse_question_type(self, type_str: str) -> QuestionType:
         """Parse HotpotQA question type to enum.
-        
+
         Args:
             type_str: 'bridge' or 'comparison'
-            
+
         Returns:
             QuestionType enum value
         """
@@ -49,7 +47,7 @@ class HotpotQALoader:
 
     def load(self) -> tuple[list[Question], list[Document]]:
         """Load the HotpotQA dataset.
-        
+
         Returns:
             Tuple of (questions, corpus)
             - questions: List of Question objects
@@ -57,14 +55,14 @@ class HotpotQALoader:
         """
         # Load from HuggingFace
         dataset = load_dataset("hotpot_qa", self.setting, split=self.split)
-        
+
         # Apply subset if specified
         if self.subset_size:
             dataset = dataset.select(range(min(self.subset_size, len(dataset))))
-        
+
         questions = []
         corpus_dict: dict[str, Document] = {}
-        
+
         for item in dataset:
             # Parse supporting facts
             supporting_facts = None
@@ -72,7 +70,7 @@ class HotpotQALoader:
                 sf = item["supporting_facts"]
                 if isinstance(sf, dict) and "title" in sf and "sent_id" in sf:
                     supporting_facts = list(zip(sf["title"], sf["sent_id"]))
-            
+
             # Create Question
             q = Question(
                 id=item["id"],
@@ -85,42 +83,42 @@ class HotpotQALoader:
                 },
             )
             questions.append(q)
-            
+
             # Parse context to build corpus
             context = item.get("context", {})
             if isinstance(context, dict):
                 titles = context.get("title", [])
                 sentences_list = context.get("sentences", [])
-                
+
                 for title, sentences in zip(titles, sentences_list):
                     doc_id = f"{item['id']}_{title}"
-                    
+
                     if doc_id not in corpus_dict:
                         # Join sentences to form document text
                         text = " ".join(sentences) if isinstance(sentences, list) else sentences
-                        
+
                         corpus_dict[doc_id] = Document(
                             id=doc_id,
                             title=title,
                             text=text,
                             sentences=sentences if isinstance(sentences, list) else [sentences],
                         )
-        
+
         return questions, list(corpus_dict.values())
 
 
 def load_hotpotqa(
     setting: str = "distractor",
     split: str = "validation",
-    subset_size: Optional[int] = None,
+    subset_size: int | None = None,
 ) -> tuple[list[Question], list[Document]]:
     """Convenience function to load HotpotQA.
-    
+
     Args:
         setting: 'distractor' or 'fullwiki'
         split: Dataset split
         subset_size: Optional limit
-        
+
     Returns:
         Tuple of (questions, corpus)
     """

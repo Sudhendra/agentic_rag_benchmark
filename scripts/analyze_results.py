@@ -19,7 +19,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -177,7 +177,7 @@ def compare_runs(run_dirs: list[Path]) -> list[dict[str, Any]]:
     return rows
 
 
-def format_table(rows: list[dict], columns: Optional[list[str]] = None) -> str:
+def format_table(rows: list[dict], columns: list[str] | None = None) -> str:
     """Format rows as a text table.
 
     Args:
@@ -224,7 +224,7 @@ def format_table(rows: list[dict], columns: Optional[list[str]] = None) -> str:
     return "\n".join(lines)
 
 
-def export_csv(rows: list[dict], output_path: Path, columns: Optional[list[str]] = None) -> None:
+def export_csv(rows: list[dict], output_path: Path, columns: list[str] | None = None) -> None:
     """Export rows to CSV file.
 
     Args:

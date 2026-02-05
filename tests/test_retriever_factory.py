@@ -1,5 +1,3 @@
-import pytest
-
 from src.retrieval.hybrid import create_retriever
 
 

@@ -1,10 +1,11 @@
 """Unit tests for HotpotQA data loader."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
+import pytest
+
+from src.core.types import QuestionType
 from src.data.hotpotqa import HotpotQALoader, load_hotpotqa
-from src.core.types import QuestionType, Document, Question
 
 
 class MockDataset:
