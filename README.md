@@ -4,6 +4,25 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 **Target:** ACL/NAACL 2026 publication
 
+## Current Results
+
+### Vanilla RAG Baseline (HotpotQA Full Validation - 7,405 questions)
+
+| Retriever | Exact Match | F1 Score | Cost |
+|-----------|-------------|----------|------|
+| **Dense** | **45.0%** | **59.5%** | $0.79 |
+| Hybrid    | 44.1%       | 58.6%    | $0.76 |
+| BM25      | 38.2%       | 51.5%    | $0.77 |
+
+*Model: gpt-4o-mini | Dense retrieval uses text-embedding-3-small*
+
+### By Question Type (Dense Retriever)
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 39.6% | 55.4% |
+| Comparison | 1,487 | 66.3% | 75.9% |
+
 ## Quick Start
 
 ### 1. Setup Environment
@@ -41,7 +60,21 @@ python scripts/test_pipeline.py
 ### 4. Run Baseline Experiment
 
 ```bash
-python scripts/run_experiment.py --config configs/vanilla.yaml
+# Run with Dense retriever (recommended - best performance)
+python scripts/run_experiment.py --config configs/vanilla_dense_full.yaml
+
+# Or run a quick test with 100 questions
+python scripts/run_experiment.py --config configs/vanilla_dense.yaml
+```
+
+### 5. Analyze Results
+
+```bash
+# View summary of a specific run
+python scripts/analyze_results.py --results results/<run_id> --breakdown
+
+# Compare multiple runs
+python scripts/analyze_results.py --results results --compare
 ```
 
 ## Project Structure
