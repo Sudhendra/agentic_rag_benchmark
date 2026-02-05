@@ -1,0 +1,10 @@
+inherits: base.yaml
+
+experiment:
+  name: "vanilla"
+
+retrieval:
+  method: "bm25"
+
+data:
+  subset_size: 100
