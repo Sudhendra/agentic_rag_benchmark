@@ -1,7 +1,8 @@
 """Unit tests for Vanilla RAG architecture."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.architectures.vanilla_rag import VanillaRAG
 from src.core.types import (

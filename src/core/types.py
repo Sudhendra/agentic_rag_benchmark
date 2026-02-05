@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 
@@ -32,9 +32,9 @@ class Question:
     id: str
     text: str
     type: QuestionType
-    gold_answer: Optional[str] = None
-    supporting_facts: Optional[list[tuple[str, int]]] = None  # (title, sent_idx)
-    decomposition: Optional[list[str]] = None  # Sub-questions if available
+    gold_answer: str | None = None
+    supporting_facts: list[tuple[str, int]] | None = None  # (title, sent_idx)
+    decomposition: list[str] | None = None  # Sub-questions if available
     metadata: dict = field(default_factory=dict)
 
 
@@ -46,7 +46,7 @@ class Document:
     title: str
     text: str
     sentences: list[str] = field(default_factory=list)
-    embedding: Optional[np.ndarray] = None
+    embedding: np.ndarray | None = None
 
     def __post_init__(self):
         """Auto-split text into sentences if not provided."""
@@ -105,10 +105,10 @@ class EvaluationResult:
     f1: float
     predicted_answer: str
     gold_answer: str
-    supporting_fact_em: Optional[float] = None
-    supporting_fact_f1: Optional[float] = None
-    joint_em: Optional[float] = None
-    joint_f1: Optional[float] = None
+    supporting_fact_em: float | None = None
+    supporting_fact_f1: float | None = None
+    joint_em: float | None = None
+    joint_f1: float | None = None
     # Efficiency metrics
     latency_ms: float = 0.0
     tokens_used: int = 0
@@ -129,8 +129,8 @@ class BenchmarkResult:
     # Accuracy metrics
     avg_exact_match: float
     avg_f1: float
-    avg_supporting_fact_em: Optional[float]
-    avg_supporting_fact_f1: Optional[float]
+    avg_supporting_fact_em: float | None
+    avg_supporting_fact_f1: float | None
     # Breakdown by question type
     metrics_by_type: dict[QuestionType, dict[str, float]]
     # Efficiency metrics

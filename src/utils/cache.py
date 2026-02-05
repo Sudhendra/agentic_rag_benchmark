@@ -5,39 +5,36 @@ import json
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class SQLiteCache:
     """Thread-safe SQLite cache for LLM API responses.
-    
+
     This cache is critical for cost management - it prevents redundant
     API calls during development and experimentation.
     """
 
     def __init__(self, db_path: str = ".cache/llm_cache.db"):
         """Initialize the cache.
-        
+
         Args:
             db_path: Path to the SQLite database file. Use ":memory:" for testing.
         """
         self.db_path = db_path
         self._local = threading.local()
-        
+
         # Create cache directory if needed
         if db_path != ":memory:":
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize the database schema
         self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
         """Get thread-local database connection."""
         if not hasattr(self._local, "connection"):
-            self._local.connection = sqlite3.connect(
-                self.db_path,
-                check_same_thread=False
-            )
+            self._local.connection = sqlite3.connect(self.db_path, check_same_thread=False)
         return self._local.connection
 
     def _init_db(self) -> None:
@@ -58,30 +55,27 @@ class SQLiteCache:
     @staticmethod
     def make_key(data: dict) -> str:
         """Create a deterministic cache key from a dictionary.
-        
+
         Args:
             data: Dictionary to hash (typically contains model, messages, params)
-            
+
         Returns:
             SHA256 hash of the serialized data
         """
         serialized = json.dumps(data, sort_keys=True)
         return hashlib.sha256(serialized.encode()).hexdigest()
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Retrieve a value from the cache.
-        
+
         Args:
             key: Cache key (SHA256 hash)
-            
+
         Returns:
             Cached value if exists, None otherwise
         """
         conn = self._get_connection()
-        cursor = conn.execute(
-            "SELECT value FROM cache WHERE key = ?",
-            (key,)
-        )
+        cursor = conn.execute("SELECT value FROM cache WHERE key = ?", (key,))
         row = cursor.fetchone()
         if row:
             return json.loads(row[0])
@@ -89,7 +83,7 @@ class SQLiteCache:
 
     def set(self, key: str, value: Any) -> None:
         """Store a value in the cache.
-        
+
         Args:
             key: Cache key (SHA256 hash)
             value: Value to cache (must be JSON serializable)
@@ -101,16 +95,16 @@ class SQLiteCache:
             INSERT OR REPLACE INTO cache (key, value, created_at)
             VALUES (?, ?, CURRENT_TIMESTAMP)
             """,
-            (key, serialized)
+            (key, serialized),
         )
         conn.commit()
 
     def delete(self, key: str) -> bool:
         """Delete a value from the cache.
-        
+
         Args:
             key: Cache key to delete
-            
+
         Returns:
             True if a value was deleted, False otherwise
         """
@@ -121,7 +115,7 @@ class SQLiteCache:
 
     def clear(self) -> int:
         """Clear all cached values.
-        
+
         Returns:
             Number of entries cleared
         """
@@ -132,7 +126,7 @@ class SQLiteCache:
 
     def size(self) -> int:
         """Get the number of cached entries.
-        
+
         Returns:
             Number of entries in the cache
         """

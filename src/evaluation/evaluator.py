@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from ..core.types import (
     ArchitectureType,

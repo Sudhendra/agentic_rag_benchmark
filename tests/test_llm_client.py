@@ -1,9 +1,10 @@
 """Unit tests for LLM client."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.core.llm_client import OpenAIClient, BaseLLMClient, create_llm_client
+import pytest
+
+from src.core.llm_client import OpenAIClient, create_llm_client
 from src.utils.cache import SQLiteCache
 
 

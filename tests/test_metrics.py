@@ -1,13 +1,11 @@
 """Unit tests for evaluation metrics."""
 
-import pytest
-
 from src.evaluation.metrics import (
-    normalize_answer,
     exact_match,
     f1_score,
-    supporting_fact_metrics,
     joint_metrics,
+    normalize_answer,
+    supporting_fact_metrics,
 )
 
 

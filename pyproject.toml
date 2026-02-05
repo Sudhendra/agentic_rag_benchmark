@@ -62,8 +62,10 @@ target-version = ["py311"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]
+ignore = ["E501", "E402", "W293"]  # E402: imports after sys.path modification, W293: whitespace in docstrings
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
