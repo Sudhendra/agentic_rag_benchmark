@@ -10,13 +10,13 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 ```bash
 # Create virtual environment
-python -m venv venv
+python -m venv .venv
 
 # Activate (Windows)
-venv\Scripts\activate
+.venv\Scripts\activate
 
 # Activate (Unix/Mac)
-source venv/bin/activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -36,6 +36,12 @@ cp .env.example .env
 
 ```bash
 python scripts/test_pipeline.py
+```
+
+### 4. Run Baseline Experiment
+
+```bash
+python scripts/run_experiment.py --config configs/vanilla.yaml
 ```
 
 ## Project Structure

@@ -46,6 +46,7 @@ htmlcov/
 # Results and logs
 results/
 logs/
+mlruns/
 *.log
 
 # MyPy
