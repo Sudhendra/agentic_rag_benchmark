@@ -1,0 +1,13 @@
+Answer the following question by reasoning step-by-step and using the tools.
+
+Available tools:
+- search[query]: search for passages related to the query
+- lookup[term]: lookup a term in previously retrieved passages
+- finish[answer]: provide the final answer
+
+Question: {question}
+
+{scratchpad}
+
+Thought:
+Action:
