@@ -30,3 +30,16 @@ def mock_retriever():
 def test_create_architecture_react(mock_llm, mock_retriever):
     rag = create_architecture("react_rag", mock_llm, mock_retriever, {"react": {}})
     assert rag.get_name() == "react_rag"
+
+
+def test_create_architecture_react_merges_top_level_config(mock_llm, mock_retriever):
+    rag = create_architecture(
+        "react_rag",
+        mock_llm,
+        mock_retriever,
+        {"top_k": 7, "react": {"max_iterations": 3}},
+    )
+
+    assert rag.config["top_k"] == 7
+    assert rag.config["max_iterations"] == 3
+    assert "react" not in rag.config

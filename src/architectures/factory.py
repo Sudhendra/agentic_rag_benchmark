@@ -12,11 +12,17 @@ from ..core.retriever import BaseRetriever
 
 
 def _resolve_architecture_config(name: str, config: dict[str, Any]) -> dict[str, Any]:
-    if name == "vanilla_rag" and "vanilla" in config:
-        return config.get("vanilla", {})
-    if name == "react_rag" and "react" in config:
-        return config.get("react", {})
-    return config
+    nested_key = None
+    if name == "vanilla_rag":
+        nested_key = "vanilla"
+    elif name == "react_rag":
+        nested_key = "react"
+
+    nested_config = config.get(nested_key, {}) if nested_key else {}
+    merged_config = {**config, **nested_config}
+    if nested_key and nested_key in merged_config:
+        merged_config.pop(nested_key, None)
+    return merged_config
 
 
 def create_architecture(
