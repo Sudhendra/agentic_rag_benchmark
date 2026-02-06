@@ -10,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.architectures.vanilla_rag import VanillaRAG
+from src.architectures.factory import create_architecture
 from src.core.llm_client import create_llm_client
 from src.data.hotpotqa import load_hotpotqa
 from src.evaluation.evaluator import Evaluator
@@ -31,7 +31,7 @@ def _apply_overrides(config: dict[str, Any], subset_size: int | None) -> dict[st
     return config
 
 
-def _build_rag(config: dict[str, Any]) -> VanillaRAG:
+def _build_rag(config: dict[str, Any]):
     cache = None
     if config.get("cache", {}).get("enabled", False):
         cache_path = config.get("cache", {}).get("path", ".cache/llm_cache.db")
@@ -52,13 +52,27 @@ def _build_rag(config: dict[str, Any]) -> VanillaRAG:
         embedding_model=retrieval_config.get("embedding_model", "text-embedding-3-small"),
     )
 
-    rag_config = {
+    architecture_name = config.get("architecture", {}).get("name", "vanilla_rag")
+    common_config = {
         "top_k": retrieval_config.get("top_k", 5),
         "max_context_tokens": llm_config.get("max_tokens", 1024),
-        "prompt_path": config.get("prompt_path", "prompts/vanilla.txt"),
     }
 
-    return VanillaRAG(llm, retriever, rag_config)
+    if architecture_name == "vanilla_rag":
+        architecture_config = {
+            **common_config,
+            "prompt_path": config.get("prompt_path", "prompts/vanilla.txt"),
+            **config.get("vanilla", {}),
+        }
+    elif architecture_name == "react_rag":
+        architecture_config = {
+            **common_config,
+            **config.get("react", {}),
+        }
+    else:
+        architecture_config = {**common_config, **config.get(architecture_name, {})}
+
+    return create_architecture(architecture_name, llm, retriever, architecture_config)
 
 
 async def run_experiment(config: dict[str, Any]) -> Path:
