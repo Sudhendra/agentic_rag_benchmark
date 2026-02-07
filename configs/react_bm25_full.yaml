@@ -1,0 +1,16 @@
+inherits: base.yaml
+
+experiment:
+  name: "react_bm25_full"
+
+architecture:
+  name: "react_rag"
+
+react:
+  max_iterations: 7
+
+retrieval:
+  method: "bm25"
+
+data:
+  subset_size: null  # Full validation set

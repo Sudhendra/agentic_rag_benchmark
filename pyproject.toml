@@ -1,0 +1,77 @@
+[project]
+name = "agentic-rag-benchmark"
+version = "0.1.0"
+description = "Benchmarking Agentic RAG vs Recursive RAG vs Recursive LMs for Multi-hop QA"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Sudhendra"}
+]
+keywords = ["rag", "llm", "benchmark", "multi-hop-qa", "agents"]
+
+dependencies = [
+    "openai>=1.0",
+    "rank-bm25>=0.2.2",
+    "datasets>=2.14",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.65",
+    "tenacity>=8.2",
+    "tiktoken>=0.5",
+    "python-dotenv>=1.0",
+    "mlflow>=2.10",
+]
+
+[project.optional-dependencies]
+anthropic = [
+    "anthropic>=0.18",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+]
+analysis = [
+    "matplotlib>=3.7",
+    "seaborn>=0.12",
+    "scipy>=1.10",
+]
+all = [
+    "agentic-rag-benchmark[anthropic,dev,analysis]",
+]
+
+[project.urls]
+Repository = "https://github.com/sudhendra/agentic_rag_benchmark"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501", "E402", "W293"]  # E402: imports after sys.path modification, W293: whitespace in docstrings
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true

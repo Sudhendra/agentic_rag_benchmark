@@ -1,0 +1,17 @@
+inherits: base.yaml
+
+experiment:
+  name: "react_dense_full"
+
+architecture:
+  name: "react_rag"
+
+react:
+  max_iterations: 7
+
+retrieval:
+  method: "dense"
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: null  # Full validation set
