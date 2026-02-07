@@ -16,6 +16,10 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 *Model: gpt-4o-mini | Dense retrieval uses text-embedding-3-small*
 
+### ReAct RAG (HotpotQA Full Validation)
+
+Results pending. Run the ReAct configs in `configs/react_*_full.yaml` to populate this table.
+
 ### By Question Type (Dense Retriever)
 
 | Type | Count | Exact Match | F1 |
@@ -99,7 +103,7 @@ agentic_rag_benchmark/
 | Architecture | Type | Status |
 |--------------|------|--------|
 | Vanilla RAG | Baseline | ✅ Complete |
-| ReAct RAG | Agentic | 🔲 Planned |
+| ReAct RAG | Agentic | ✅ Implemented (results pending) |
 | Self-RAG | Agentic | 🔲 Planned |
 | Planner RAG | Agentic | 🔲 Planned |
 | IRCoT | Recursive | 🔲 Planned |
