@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from .agentic.react_rag import ReActRAG
-from .vanilla_rag import VanillaRAG
 from ..core.base_rag import BaseRAG
 from ..core.llm_client import BaseLLMClient
 from ..core.retriever import BaseRetriever
+from .agentic.react_rag import ReActRAG
+from .vanilla_rag import VanillaRAG
 
 
 def _resolve_architecture_config(name: str, config: dict[str, Any]) -> dict[str, Any]:
