@@ -27,7 +27,6 @@ from ...core.types import (
     RetrievalResult,
 )
 
-
 # Support level scores for candidate ranking
 _SUPPORT_SCORES: dict[str, float] = {
     "fully supported": 1.0,
