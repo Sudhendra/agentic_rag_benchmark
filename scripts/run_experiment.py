@@ -69,6 +69,11 @@ def _build_rag(config: dict[str, Any]):
             **common_config,
             **config.get("react", {}),
         }
+    elif architecture_name == "self_rag":
+        architecture_config = {
+            **common_config,
+            **config.get("self_rag", {}),
+        }
     else:
         architecture_config = {**common_config, **config.get(architecture_name, {})}
 
