@@ -1,0 +1,16 @@
+inherits: base.yaml
+
+experiment:
+  name: "self_rag"
+
+architecture:
+  name: "self_rag"
+
+self_rag:
+  num_candidates: 3
+
+retrieval:
+  method: "bm25"
+
+data:
+  subset_size: 100

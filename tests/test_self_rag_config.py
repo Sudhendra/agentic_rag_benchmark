@@ -38,3 +38,12 @@ def test_self_rag_config_merging(mock_llm, mock_retriever):
     )
     assert rag.config["num_candidates"] == 5
     assert rag.config["top_k"] == 10
+
+
+def test_self_rag_yaml_config_loads():
+    """self_rag.yaml should load and have correct architecture name."""
+    from src.utils.config import load_config
+
+    config = load_config(Path("configs/self_rag.yaml"))
+    assert config["architecture"]["name"] == "self_rag"
+    assert config["self_rag"]["num_candidates"] == 3
