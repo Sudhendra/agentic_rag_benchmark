@@ -7,4 +7,4 @@ Given the question, decide if you need to retrieve external information or can a
 Question: {question}
 
 Do you need to retrieve information to answer this question accurately?
-Answer with exactly "yes" or "no":
+Answer with exactly: [Retrieval] yes or [Retrieval] no

@@ -54,47 +54,47 @@ The Self-RAG architecture uses 4 reflection tokens to guide the pipeline. Our im
 
 ```
 Phase 1 — Retrieval Decision:
-  prompt LLM: "Given {question}, do you need to retrieve information? Answer: yes or no"
-  parse response → retrieval_needed (bool)
+  prompt LLM: "Given {question}, do you need to retrieve information? Output: [Retrieval] yes|no"
+  parse [Retrieval] token → retrieval_needed (bool)
 
 Phase 2 — If retrieval needed:
   passages = retriever.retrieve(question, corpus, top_k)
-  
-  For each passage:
-    prompt LLM: "Is this passage relevant to {question}? Answer: relevant or irrelevant"
-    → filter to relevant_passages
 
-Phase 3 — Generate candidate answers from relevant passages:
+  For each passage:
+    prompt LLM: "Is this passage relevant to {question}? Output: [IsRel] relevant|irrelevant"
+    → filter to relevant_passages (fallback to all passages if none relevant)
+
+Phase 3 — Generate and critique from relevant passages:
   For each relevant passage (up to num_candidates):
-    prompt LLM: "Answer {question} based on: {passage}"
+    prompt LLM: "Answer {question} based on: {passage}."
     → generation
 
-    prompt LLM: "Does {passage} support {generation}? Answer: fully/partially/no"
+    prompt LLM: "Is the answer supported by the passage? Output [IsSup] fully supported|partially supported|no support"
     → support_level
 
-    prompt LLM: "Rate utility of {generation} for {question}: 1-5"
+    prompt LLM: "Rate utility of {generation} for {question}: Output [IsUse] 1-5"
     → utility_score
 
 Phase 4 — Select best candidate:
-  score = utility + support_bonus
-  return highest scoring candidate
+  choose the candidate with highest utility (tie-break with support level)
 
 Phase 1 alt — If NO retrieval needed:
   prompt LLM: "Answer {question} directly"
+  prompt LLM: "Rate utility of the answer: Output [IsUse] 1-5"
   return direct answer
 ```
 
-**Cost-optimization:** We batch the relevance, support, and utility assessments into single prompts per passage to reduce LLM calls. Each candidate assessment (relevance + generation + support + utility) is done as 3 LLM calls instead of 4 by combining relevance check with generation.
-
-**Actual implementation:** To keep LLM calls manageable, we use a 2-call-per-candidate approach:
+**Actual implementation (paper-aligned, no thresholds):**
 1. **Retrieval decision** — 1 LLM call
 2. **Retrieve** — 1 retriever call
-3. **Per-candidate (up to `num_candidates`):**
-   - **Generate + assess relevance/support** — 1 LLM call (combined prompt)
-   - **Rate utility** — 1 LLM call
-4. **Select best** — pure logic, no LLM call
+3. **Relevance filtering** — 1 LLM call per retrieved passage (top_k)
+4. **Per-candidate (up to `num_candidates`, from relevant passages):**
+   - **Generate answer** — 1 LLM call
+   - **Support critique ([IsSup])** — 1 LLM call
+   - **Rate utility ([IsUse])** — 1 LLM call
+5. **Select best** — pure logic, no LLM call
 
-Total LLM calls: `1 + (2 × num_candidates)` when retrieval is needed, `2` when not.
+Total LLM calls: `1 + top_k + (3 × min(num_candidates, num_relevant))` when retrieval is needed (fallback to top_k if no relevant passages), `2` when not.
 
 ---
 
@@ -1400,13 +1400,203 @@ git commit -m "docs: add self-rag subset results"
 
 ---
 
+### Task 8: Align reflection tokens and parsing with spec
+
+**Files:**
+- Modify: `prompts/self_rag.txt`
+- Modify: `src/architectures/agentic/self_rag.py`
+- Modify: `tests/test_self_rag_prompt.py`
+- Modify: `tests/test_self_rag.py`
+
+**Step 1: Write failing tests**
+
+Update `tests/test_self_rag_prompt.py` to assert the prompt includes the `[Retrieval]` token:
+
+```python
+def test_self_rag_prompt_includes_retrieval_token() -> None:
+    prompt = Path("prompts/self_rag.txt").read_text()
+    assert "[Retrieval]" in prompt
+```
+
+Add a retrieval token parsing test to `tests/test_self_rag.py`:
+
+```python
+@pytest.mark.asyncio
+async def test_retrieval_decision_parses_token(mock_llm, mock_retriever, sample_question, sample_corpus):
+    mock_llm.generate.side_effect = [
+        ("Consider retrieval. [Retrieval] no", 5, 0.001),
+        ("Paris", 10, 0.001),
+    ]
+
+    rag = SelfRAG(mock_llm, mock_retriever, {})
+    response = await rag.answer(sample_question, sample_corpus)
+
+    assert response.num_retrieval_calls == 0
+    assert response.answer == "Paris"
+```
+
+Add a utility token parsing test to `tests/test_self_rag.py`:
+
+```python
+def test_parse_utility_prefers_isuse_token(mock_llm, mock_retriever):
+    rag = SelfRAG(mock_llm, mock_retriever, {})
+    response = "Rating: 2\n[IsUse] 5"
+    assert rag._parse_utility(response) == 5
+```
+
+**Step 2: Run tests to verify they fail**
+
+Run: `pytest tests/test_self_rag_prompt.py::test_self_rag_prompt_includes_retrieval_token -v`
+Expected: FAIL
+
+Run: `pytest tests/test_self_rag.py::test_retrieval_decision_parses_token -v`
+Expected: FAIL
+
+Run: `pytest tests/test_self_rag.py::test_parse_utility_prefers_isuse_token -v`
+Expected: FAIL
+
+**Step 3: Write minimal implementation**
+
+- Update `prompts/self_rag.txt` to request `[Retrieval] yes|no` output.
+- Update `_decide_retrieval` to parse the `[Retrieval]` token anywhere in the response (fallback to previous behavior if missing).
+- Update `_parse_utility` to prefer a `[IsUse]` token value when present (fallback to first digit).
+- Update prompts in `_rate_utility` to request `[IsUse]`.
+
+**Step 4: Run tests to verify they pass**
+
+Run: `pytest tests/test_self_rag_prompt.py::test_self_rag_prompt_includes_retrieval_token -v`
+Expected: PASS
+
+Run: `pytest tests/test_self_rag.py::test_retrieval_decision_parses_token -v`
+Expected: PASS
+
+Run: `pytest tests/test_self_rag.py::test_parse_utility_prefers_isuse_token -v`
+Expected: PASS
+
+**Step 5: Commit**
+
+```bash
+git add prompts/self_rag.txt src/architectures/agentic/self_rag.py tests/test_self_rag_prompt.py tests/test_self_rag.py
+git commit -m "fix: align self-rag reflection tokens and parsing"
+```
+
+---
+
+### Task 9: Align Self-RAG with paper (no thresholds)
+
+**Files:**
+- Modify: `src/architectures/agentic/self_rag.py`
+- Modify: `tests/test_self_rag.py`
+- Modify: `tests/test_self_rag_config.py`
+- Modify: `configs/self_rag*.yaml`
+
+**Step 1: Write failing tests**
+
+Add to `tests/test_self_rag.py`:
+
+```python
+@pytest.mark.asyncio
+async def test_relevance_filtering_limits_candidates(
+    mock_llm, mock_retriever, sample_question, sample_corpus
+):
+    mock_llm.generate.side_effect = [
+        ("[Retrieval] yes", 5, 0.001),
+        ("[IsRel] relevant", 3, 0.0005),
+        ("[IsRel] irrelevant", 3, 0.0005),
+        ("Paris", 20, 0.002),
+        ("[IsSup] fully supported", 3, 0.0005),
+        ("[IsUse] 5", 3, 0.001),
+    ]
+
+    rag = SelfRAG(mock_llm, mock_retriever, {"top_k": 2, "num_candidates": 2})
+    response = await rag.answer(sample_question, sample_corpus)
+
+    assert response.answer == "Paris"
+    assert response.num_llm_calls == 6
+```
+
+Add a support critique test to `tests/test_self_rag.py`:
+
+```python
+@pytest.mark.asyncio
+async def test_support_critique_uses_generated_answer(
+    mock_llm, mock_retriever, sample_question, sample_corpus
+):
+    mock_llm.generate.side_effect = [
+        ("[Retrieval] yes", 5, 0.001),
+        ("[IsRel] relevant", 3, 0.0005),
+        ("Paris", 20, 0.002),
+        ("[IsSup] fully supported", 3, 0.0005),
+        ("[IsUse] 5", 3, 0.001),
+    ]
+
+    rag = SelfRAG(
+        mock_llm,
+        mock_retriever,
+        {"top_k": 1, "num_candidates": 1},
+    )
+    response = await rag.answer(sample_question, sample_corpus)
+
+    assert response.answer == "Paris"
+    support_prompt = mock_llm.generate.call_args_list[3].args[0][0]["content"]
+    assert "Paris" in support_prompt
+```
+
+Update `tests/test_self_rag_config.py` to remove threshold expectations:
+
+```python
+def test_self_rag_yaml_config_loads():
+    config = load_config(Path("configs/self_rag.yaml"))
+    assert config["architecture"]["name"] == "self_rag"
+    assert config["self_rag"]["num_candidates"] == 3
+```
+
+**Step 2: Run tests to verify they fail**
+
+Run: `pytest tests/test_self_rag.py::test_relevance_filtering_limits_candidates -v`
+Expected: FAIL
+
+Run: `pytest tests/test_self_rag.py::test_support_critique_uses_generated_answer -v`
+Expected: FAIL
+
+Run: `pytest tests/test_self_rag_config.py::test_self_rag_yaml_config_loads -v`
+Expected: FAIL
+
+**Step 3: Write minimal implementation**
+
+- Add a relevance assessment step that prompts for `[IsRel]` per passage and filters to relevant passages.
+- If no relevant passages remain, fall back to original top_k passages.
+- Split generation, support critique (`[IsSup]`), and utility critique (`[IsUse]`) into separate calls.
+- Limit generation/critique to top `num_candidates` relevant passages.
+- Add utility critique to the no-retrieval path.
+
+**Step 4: Run tests to verify they pass**
+
+Run: `pytest tests/test_self_rag.py::test_relevance_filtering_limits_candidates -v`
+Expected: PASS
+
+Run: `pytest tests/test_self_rag.py::test_support_threshold_filters_candidates -v`
+Expected: PASS
+
+Run: `pytest tests/test_self_rag_config.py::test_self_rag_yaml_config_loads -v`
+Expected: PASS
+
+**Step 5: Commit**
+
+```bash
+git add src/architectures/agentic/self_rag.py tests/test_self_rag.py tests/test_self_rag_config.py configs/self_rag*.yaml
+git commit -m "fix: align self-rag flow with paper"
+```
+
+---
+
 ## Cost Estimate
 
 Self-RAG uses more LLM calls per question than ReAct:
-- **Per question:** 1 (decision) + 2 × 3 (candidates) = 7 LLM calls
-- **gpt-4o-mini at ~$0.002/question × 7 calls ≈ $0.014/question**
-- **100-question subset:** ~$1.40
-- **Full 7,405 questions:** ~$104 per retriever variant
+- **Per question (retrieval path):** `1 + top_k + 2 × num_candidates`
+- With `top_k=5`, `num_candidates=3`: `1 + 5 + 6 = 12` LLM calls
+- **100-question subset:** multiply per-question cost by 100
+- **Full 7,405 questions:** multiply per-question cost by 7,405
 
 Compare to:
 - Vanilla RAG: 1 LLM call/question ≈ $0.002/question
@@ -1418,12 +1608,10 @@ Compare to:
 
 ## Design Decisions & Rationale
 
-1. **Combined generation + critique prompt:** Instead of separate LLM calls for relevance, generation, and support (4 calls per passage), we combine into 2 calls per candidate. This saves ~33% on API costs while maintaining assessment quality.
+1. **Spec-compliant reflection tokens:** Use `[Retrieval]`, `[IsRel]`, `[IsSup]`, and `[IsUse]` in prompts to match the technical spec and simplify parsing.
 
-2. **Default retrieval on ambiguous decision:** Multi-hop QA almost always benefits from retrieval. Defaulting to "yes" on ambiguous decisions prevents false negatives.
+2. **Explicit relevance filtering phase:** Implement the spec's Phase 2 relevance filter; if no relevant passages remain, fall back to the original top_k set to avoid zero candidates.
 
-3. **num_candidates instead of per-passage filtering:** The spec suggests filtering passages for relevance first, then generating from each relevant passage. Our implementation generates candidates directly from top-K passages (up to `num_candidates`), which is simpler and avoids the case where aggressive filtering leaves no candidates.
+3. **Composite scoring for selection:** `utility + support_bonus * 2.0 + relevance_bonus` with a support_threshold gate; if no candidates pass the threshold, fall back to all candidates.
 
-4. **Composite scoring for selection:** `utility + support_bonus * 2.0 + relevance_bonus` weights support heavily because well-supported answers are more likely correct for multi-hop QA.
-
-5. **No separate relevance filter phase:** The original Self-RAG paper uses fine-tuned special tokens. Since we're using API-only models with prompting, relevance assessment is folded into the generation prompt to keep things practical.
+4. **Config alignment:** Add `relevance_threshold` and `support_threshold` to the schema and config files to match the spec and enable tuning.

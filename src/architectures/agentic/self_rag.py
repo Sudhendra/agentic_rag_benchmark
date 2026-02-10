@@ -44,8 +44,8 @@ class SelfRAG(BaseRAG):
     Implements a 4-phase pipeline:
     1. Retrieval decision — should we retrieve?
     2. Retrieve + relevance filtering
-    3. Generate candidates with support critique
-    4. Utility scoring and best-candidate selection
+    3. Generate candidates + critique support + rate utility
+    4. Select best candidate by utility (tie-break with support)
     """
 
     def __init__(
@@ -136,6 +136,24 @@ class SelfRAG(BaseRAG):
                 )
             )
 
+            step_id += 1
+            utility, util_tokens, util_cost = await self._rate_utility(question, answer_text)
+            total_tokens += util_tokens
+            total_cost += util_cost
+            num_llm_calls += 1
+
+            reasoning_chain.append(
+                ReasoningStep(
+                    step_id=step_id,
+                    thought="Rate utility of the direct answer.",
+                    action="rate_utility",
+                    action_input=answer_text[:200],
+                    observation=f"Utility: {utility}/5",
+                    tokens_used=util_tokens,
+                    cost_usd=util_cost,
+                )
+            )
+
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             return RAGResponse(
                 answer=answer_text,
@@ -172,25 +190,41 @@ class SelfRAG(BaseRAG):
             )
         )
 
-        # ── Phase 3: Generate candidates with critique ──────────
-        num_candidates = min(
-            self.config["num_candidates"],
-            len(retrieval_result.documents),
-        )
+        # ── Phase 3: Relevance filtering ─────────────────────────
+        retrieved_documents = retrieval_result.documents[: self.config["top_k"]]
+        relevant_passages: list[Document] = []
+        for passage in retrieved_documents:
+            step_id += 1
+            relevance, rel_tokens, rel_cost = await self._assess_relevance(question, passage)
+            total_tokens += rel_tokens
+            total_cost += rel_cost
+            num_llm_calls += 1
+
+            reasoning_chain.append(
+                ReasoningStep(
+                    step_id=step_id,
+                    thought=f"Assess relevance of passage '{passage.title}'.",
+                    action="assess_relevance",
+                    action_input=passage.text[:200],
+                    observation=f"Relevance: {relevance}",
+                    tokens_used=rel_tokens,
+                    cost_usd=rel_cost,
+                )
+            )
+
+            if relevance == "relevant":
+                relevant_passages.append(passage)
+
+        if not relevant_passages:
+            relevant_passages = retrieved_documents
+
+        candidate_passages = relevant_passages[: self.config["num_candidates"]]
         candidates: list[dict[str, Any]] = []
 
-        for i in range(num_candidates):
-            passage = retrieval_result.documents[i]
-
-            # 3a: Generate answer + assess relevance and support
+        for i, passage in enumerate(candidate_passages, start=1):
+            # 3a: Generate answer from passage
             step_id += 1
-            (
-                generation,
-                relevance,
-                support,
-                gen_tokens,
-                gen_cost,
-            ) = await self._generate_and_critique(question, passage)
+            generation, gen_tokens, gen_cost = await self._generate_answer(question, passage)
             total_tokens += gen_tokens
             total_cost += gen_cost
             num_llm_calls += 1
@@ -198,22 +232,37 @@ class SelfRAG(BaseRAG):
             reasoning_chain.append(
                 ReasoningStep(
                     step_id=step_id,
-                    thought=(
-                        f"Generate answer from passage '{passage.title}' "
-                        f"and assess relevance/support."
-                    ),
-                    action="generate_and_critique",
+                    thought=f"Generate answer from passage '{passage.title}'.",
+                    action="generate_answer",
                     action_input=passage.text[:200],
-                    observation=(
-                        f"Generation: {generation[:100]}... | "
-                        f"Relevance: {relevance} | Support: {support}"
-                    ),
+                    observation=f"Generation: {generation[:100]}...",
                     tokens_used=gen_tokens,
                     cost_usd=gen_cost,
                 )
             )
 
-            # 3b: Rate utility
+            # 3b: Critique support
+            step_id += 1
+            support, sup_tokens, sup_cost = await self._critique_support(
+                question, passage, generation
+            )
+            total_tokens += sup_tokens
+            total_cost += sup_cost
+            num_llm_calls += 1
+
+            reasoning_chain.append(
+                ReasoningStep(
+                    step_id=step_id,
+                    thought=f"Critique support for candidate {i}.",
+                    action="critique_support",
+                    action_input=generation[:200],
+                    observation=f"Support: {support}",
+                    tokens_used=sup_tokens,
+                    cost_usd=sup_cost,
+                )
+            )
+
+            # 3c: Rate utility
             step_id += 1
             utility, util_tokens, util_cost = await self._rate_utility(question, generation)
             total_tokens += util_tokens
@@ -223,7 +272,7 @@ class SelfRAG(BaseRAG):
             reasoning_chain.append(
                 ReasoningStep(
                     step_id=step_id,
-                    thought=f"Rate overall utility of candidate {i + 1}.",
+                    thought=f"Rate overall utility of candidate {i}.",
                     action="rate_utility",
                     action_input=generation[:200],
                     observation=f"Utility: {utility}/5",
@@ -235,7 +284,7 @@ class SelfRAG(BaseRAG):
             candidates.append(
                 {
                     "generation": generation,
-                    "relevance": relevance,
+                    "relevance": "relevant" if passage in relevant_passages else "irrelevant",
                     "support": support,
                     "utility": utility,
                     "passage_title": passage.title,
@@ -290,8 +339,13 @@ class SelfRAG(BaseRAG):
         response_text, tokens, cost = await self.llm.generate(messages)
 
         normalized = response_text.strip().lower()
-        # Default to yes (retrieve) unless explicitly "no"
-        retrieval_needed = "no" not in normalized.split()[:3]
+        token_match = re.search(r"\[retrieval\]\s*(yes|no|continue)", normalized)
+        if token_match:
+            token_value = token_match.group(1)
+            retrieval_needed = token_value == "yes"
+        else:
+            # Default to yes (retrieve) unless explicitly "no"
+            retrieval_needed = "no" not in normalized.split()[:3]
 
         return retrieval_needed, tokens, cost
 
@@ -310,29 +364,65 @@ class SelfRAG(BaseRAG):
         response_text, tokens, cost = await self.llm.generate(messages)
         return response_text.strip(), tokens, cost
 
-    async def _generate_and_critique(
+    async def _assess_relevance(
         self, question: Question, passage: Document
-    ) -> tuple[str, str, str, int, float]:
-        """Generate an answer from a passage and assess relevance + support.
+    ) -> tuple[str, int, float]:
+        """Assess relevance of a passage to the question.
 
         Returns:
-            (generation, relevance, support_level, tokens_used, cost)
+            (relevance, tokens_used, cost)
         """
         prompt = (
-            f"Answer the question based on the provided passage. "
-            f"After your answer, assess the passage on two dimensions.\n\n"
+            f"Is the following passage relevant to the question?\n\n"
             f"Passage ({passage.title}): {passage.text}\n\n"
             f"Question: {question.text}\n\n"
-            f"Provide your answer, then on new lines:\n"
-            f"[IsRel] relevant or irrelevant\n"
-            f"[IsSup] fully supported, partially supported, or no support\n\n"
+            f"Answer with exactly: [IsRel] relevant or [IsRel] irrelevant"
+        )
+        messages = [{"role": "user", "content": prompt}]
+        response_text, tokens, cost = await self.llm.generate(messages)
+        relevance = self._parse_relevance(response_text)
+        return relevance, tokens, cost
+
+    async def _generate_answer(
+        self, question: Question, passage: Document
+    ) -> tuple[str, int, float]:
+        """Generate an answer from a passage.
+
+        Returns:
+            (generation, tokens_used, cost)
+        """
+        prompt = (
+            f"Answer the question based on the provided passage.\n\n"
+            f"Passage ({passage.title}): {passage.text}\n\n"
+            f"Question: {question.text}\n\n"
             f"Answer:"
         )
         messages = [{"role": "user", "content": prompt}]
         response_text, tokens, cost = await self.llm.generate(messages)
+        return response_text.strip(), tokens, cost
 
-        generation, relevance, support = self._parse_critique(response_text)
-        return generation, relevance, support, tokens, cost
+    async def _critique_support(
+        self, question: Question, passage: Document, generation: str
+    ) -> tuple[str, int, float]:
+        """Critique support of a generation using the passage.
+
+        Returns:
+            (support_level, tokens_used, cost)
+        """
+        prompt = (
+            f"Is the answer supported by the passage?\n\n"
+            f"Passage ({passage.title}): {passage.text}\n\n"
+            f"Question: {question.text}\n"
+            f"Answer: {generation}\n\n"
+            f"Respond with exactly one of:\n"
+            f"[IsSup] fully supported\n"
+            f"[IsSup] partially supported\n"
+            f"[IsSup] no support"
+        )
+        messages = [{"role": "user", "content": prompt}]
+        response_text, tokens, cost = await self.llm.generate(messages)
+        support = self._parse_support(response_text)
+        return support, tokens, cost
 
     async def _rate_utility(self, question: Question, generation: str) -> tuple[int, int, float]:
         """Rate the utility of a generation on a 1-5 scale.
@@ -345,7 +435,7 @@ class SelfRAG(BaseRAG):
             f"on a scale of 1 to 5 (1=useless, 5=perfect).\n\n"
             f"Question: {question.text}\n"
             f"Answer: {generation}\n\n"
-            f"Rating (1-5):"
+            f"Respond with exactly: [IsUse] 1-5"
         )
         messages = [{"role": "user", "content": prompt}]
         response_text, tokens, cost = await self.llm.generate(messages)
@@ -353,41 +443,37 @@ class SelfRAG(BaseRAG):
         utility = self._parse_utility(response_text)
         return utility, tokens, cost
 
-    def _parse_critique(self, response_text: str) -> tuple[str, str, str]:
-        """Parse generation, relevance, and support from LLM response.
+    def _parse_relevance(self, response_text: str) -> str:
+        """Parse relevance from LLM response.
 
         Returns:
-            (generation_text, relevance, support_level)
+            "relevant" or "irrelevant"
         """
-        lines = response_text.strip().split("\n")
-        generation_lines: list[str] = []
-        relevance = "relevant"  # default
-        support = "partially supported"  # default
+        normalized = response_text.strip().lower()
+        match = re.search(r"\[isrel\]\s*([^\n\r]+)", normalized)
+        value = match.group(1).strip() if match else normalized
+        if "irrelevant" in value:
+            return "irrelevant"
+        if "relevant" in value:
+            return "relevant"
+        return "relevant"
 
-        for line in lines:
-            stripped = line.strip()
-            if stripped.lower().startswith("[isrel]"):
-                value = stripped.split("]", 1)[1].strip().lower()
-                if "irrelevant" in value:
-                    relevance = "irrelevant"
-                else:
-                    relevance = "relevant"
-            elif stripped.lower().startswith("[issup]"):
-                value = stripped.split("]", 1)[1].strip().lower()
-                if "fully" in value:
-                    support = "fully supported"
-                elif "no" in value:
-                    support = "no support"
-                else:
-                    support = "partially supported"
-            else:
-                generation_lines.append(stripped)
+    def _parse_support(self, response_text: str) -> str:
+        """Parse support level from LLM response.
 
-        generation = "\n".join(generation_lines).strip()
-        if not generation:
-            generation = response_text.strip()
-
-        return generation, relevance, support
+        Returns:
+            "fully supported", "partially supported", or "no support"
+        """
+        normalized = response_text.strip().lower()
+        match = re.search(r"\[issup\]\s*([^\n\r]+)", normalized)
+        value = match.group(1).strip() if match else normalized
+        if "fully" in value:
+            return "fully supported"
+        if "no support" in value or value.strip() == "no":
+            return "no support"
+        if "partially" in value:
+            return "partially supported"
+        return "partially supported"
 
     def _parse_utility(self, response_text: str) -> int:
         """Parse a utility score (1-5) from LLM response.
@@ -395,7 +481,11 @@ class SelfRAG(BaseRAG):
         Returns:
             Integer utility score, defaults to 3 on parse failure.
         """
-        match = re.search(r"[1-5]", response_text.strip())
+        normalized = response_text.strip().lower()
+        token_match = re.search(r"\[isuse\]\s*([1-5])", normalized)
+        if token_match:
+            return int(token_match.group(1))
+        match = re.search(r"[1-5]", normalized)
         if match:
             return int(match.group(0))
         return 3  # default to middle score
@@ -403,11 +493,7 @@ class SelfRAG(BaseRAG):
     def _select_best_candidate(self, candidates: list[dict[str, Any]]) -> dict[str, Any]:
         """Select the best candidate based on composite score.
 
-        Score = utility + support_bonus
-        - fully supported: +2.0
-        - partially supported: +1.0
-        - no support: +0.0
-        - relevant passages get +0.5 bonus
+        Selection priority: highest utility, tie-break by support level.
 
         Returns:
             The best candidate dict.
@@ -421,10 +507,9 @@ class SelfRAG(BaseRAG):
                 "passage_title": "",
             }
 
-        def _score(candidate: dict[str, Any]) -> float:
+        def _score(candidate: dict[str, Any]) -> tuple[int, float]:
             utility = candidate["utility"]
-            support_bonus = _SUPPORT_SCORES.get(candidate["support"], 0.5)
-            relevance_bonus = 0.5 if candidate["relevance"] == "relevant" else 0.0
-            return utility + (support_bonus * 2.0) + relevance_bonus
+            support_bonus = _SUPPORT_SCORES.get(candidate["support"], 0.0)
+            return utility, support_bonus
 
         return max(candidates, key=_score)
