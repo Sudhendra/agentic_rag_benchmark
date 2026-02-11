@@ -1,0 +1,17 @@
+inherits: base.yaml
+
+experiment:
+  name: "self_rag_dense"
+
+architecture:
+  name: "self_rag"
+
+self_rag:
+  num_candidates: 3
+
+retrieval:
+  method: "dense"
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: 100

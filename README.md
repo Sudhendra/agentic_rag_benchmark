@@ -20,6 +20,18 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 Results pending. Run the ReAct configs in `configs/react_*_full.yaml` to populate this table.
 
+### Self-RAG (HotpotQA Full Validation)
+
+Results pending. Run the Self-RAG configs in `configs/self_rag_*_full.yaml` to populate this table.
+
+| Retriever | Exact Match | F1 Score | Cost | LLM Calls/Q |
+|-----------|-------------|----------|------|-------------|
+| BM25      | pending     | pending  | pending | ~7       |
+| Dense     | pending     | pending  | pending | ~7       |
+| Hybrid    | pending     | pending  | pending | ~7       |
+
+*Model: gpt-4o-mini | 3 candidates per question | ~$0.014/question*
+
 ### By Question Type (Dense Retriever)
 
 | Type | Count | Exact Match | F1 |
@@ -104,7 +116,7 @@ agentic_rag_benchmark/
 |--------------|------|--------|
 | Vanilla RAG | Baseline | ✅ Complete |
 | ReAct RAG | Agentic | ✅ Implemented (results pending) |
-| Self-RAG | Agentic | 🔲 Planned |
+| Self-RAG | Agentic | ✅ Implemented (results pending) |
 | Planner RAG | Agentic | 🔲 Planned |
 | IRCoT | Recursive | 🔲 Planned |
 | REAP | Recursive | 🔲 Planned |

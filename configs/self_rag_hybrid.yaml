@@ -1,0 +1,16 @@
+inherits: base.yaml
+
+experiment:
+  name: "self_rag_hybrid"
+
+architecture:
+  name: "self_rag"
+
+self_rag:
+  num_candidates: 3
+
+retrieval:
+  method: "hybrid"
+
+data:
+  subset_size: 100

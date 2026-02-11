@@ -1,0 +1,10 @@
+You are a self-reflective question answering system. You must decide whether to retrieve information and critically evaluate your own generations.
+
+## Retrieval Decision
+
+Given the question, decide if you need to retrieve external information or can answer directly.
+
+Question: {question}
+
+Do you need to retrieve information to answer this question accurately?
+Answer with exactly: [Retrieval] yes or [Retrieval] no
