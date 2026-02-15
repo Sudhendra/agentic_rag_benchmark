@@ -356,7 +356,8 @@ class SelfRAG(BaseRAG):
             (answer_text, tokens_used, cost)
         """
         prompt = (
-            f"Answer the following question concisely and directly.\n\n"
+            f"Answer the following question. Be concise and direct. "
+            f"Give only the answer without any explanation.\n\n"
             f"Question: {question.text}\n\n"
             f"Answer:"
         )
@@ -392,7 +393,8 @@ class SelfRAG(BaseRAG):
             (generation, tokens_used, cost)
         """
         prompt = (
-            f"Answer the question based on the provided passage.\n\n"
+            f"Answer the question based on the provided passage. Be concise and direct. "
+            f"Give only the answer without any explanation.\n\n"
             f"Passage ({passage.title}): {passage.text}\n\n"
             f"Question: {question.text}\n\n"
             f"Answer:"

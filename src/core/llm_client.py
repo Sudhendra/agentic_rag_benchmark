@@ -152,9 +152,17 @@ class OpenAIClient(BaseLLMClient):
         return input_cost + output_cost
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=60),
-        retry=retry_if_exception_type((openai.RateLimitError, openai.APITimeoutError)),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=2, min=2, max=120),
+        retry=retry_if_exception_type(
+            (
+                openai.RateLimitError,
+                openai.APITimeoutError,
+                openai.APIConnectionError,
+                openai.InternalServerError,
+                openai.PermissionDeniedError,
+            )
+        ),
     )
     async def generate(
         self,

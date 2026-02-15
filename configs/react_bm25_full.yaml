@@ -12,5 +12,8 @@ react:
 retrieval:
   method: "bm25"
 
+evaluation:
+  max_concurrency: 3  # Lower than default (5) since ReAct makes multiple LLM calls per question
+
 data:
   subset_size: null  # Full validation set

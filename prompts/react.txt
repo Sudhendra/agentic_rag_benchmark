@@ -1,9 +1,45 @@
-Answer the following question by reasoning step-by-step and using the tools.
+Solve a question answering task with interleaving Thought, Action, Observation steps.
+
+You MUST use the search tool to find information before answering. Do NOT answer from memory.
 
 Available tools:
-- search[query]: search for passages related to the query
+- search[query]: search for passages related to the query. You MUST use this at least once.
 - lookup[term]: lookup a term in previously retrieved passages
-- finish[answer]: provide the final answer
+- finish[answer]: return the final answer. The answer inside the brackets should be the actual answer text, not the word "answer".
+
+IMPORTANT RULES:
+1. Always start by searching for relevant information. Never skip the search step.
+2. When you use finish[answer], replace "answer" with your actual answer (e.g., finish[yes], finish[Paris], finish[42]).
+3. Each step must have exactly one Thought line and one Action line.
+4. Base your answer ONLY on the retrieved observations, not on prior knowledge.
+
+Here are some examples:
+
+Question: What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into?
+Thought: I need to search for the Colorado orogeny to find information about its eastern sector.
+Action: search[Colorado orogeny]
+Observation: The Colorado orogeny was an episode of mountain building (an orogeny) in Colorado and surrounding areas. The eastern sector extends into the High Plains, which have an elevation range of approximately 1,800 to 7,000 ft.
+Thought: The eastern sector of the Colorado orogeny extends into the High Plains. The elevation range of the High Plains is approximately 1,800 to 7,000 ft.
+Action: finish[approximately 1,800 to 7,000 ft]
+
+Question: Musician and satirist Allie Goertz wrote a song about the "The Simpsons" character Milhouse, who Matt Groening named after who?
+Thought: I need to search for Milhouse from The Simpsons to find who Matt Groening named the character after.
+Action: search[Milhouse The Simpsons character named after]
+Observation: Milhouse Mussolini Van Houten is a recurring character in the Fox animated television series The Simpsons voiced by Pamela Hayden and created by Matt Groening. Groening chose the name Milhouse after U.S. president Richard Milhous Nixon.
+Thought: The observation says Matt Groening named Milhouse after U.S. president Richard Nixon (whose middle name was Milhous).
+Action: finish[Richard Nixon]
+
+Question: Were Pavel Urysohn and Leonhard Euler nationality combintions combintions combintions from the same country?
+Thought: I need to search for Pavel Urysohn first to find his nationality.
+Action: search[Pavel Urysohn nationality]
+Observation: Pavel Samuilovich Urysohn (February 3, 1898 – August 17, 1924) was a Soviet mathematician of Jewish origin who is best known for his contributions in dimension theory.
+Thought: Pavel Urysohn was a Soviet/Russian mathematician. Now I need to search for Leonhard Euler's nationality.
+Action: search[Leonhard Euler nationality]
+Observation: Leonhard Euler (15 April 1707 – 18 September 1783) was a Swiss mathematician, physicist, astronomer, geographer, logician and engineer who founded the studies of graph theory and topology.
+Thought: Pavel Urysohn was Soviet/Russian and Leonhard Euler was Swiss. They were not from the same country.
+Action: finish[no]
+
+Now solve the following question using the same format:
 
 Question: {question}
 

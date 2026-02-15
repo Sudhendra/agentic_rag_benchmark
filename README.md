@@ -16,28 +16,41 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 *Model: gpt-4o-mini | Dense retrieval uses text-embedding-3-small*
 
-### ReAct RAG (HotpotQA Full Validation)
+### ReAct RAG (HotpotQA Full Validation - 7,405 questions)
 
-Results pending. Run the ReAct configs in `configs/react_*_full.yaml` to populate this table.
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Hybrid** | **46.0%** | **59.9%** | 7,611 | $9.18 | 4.05 | 2.66 |
+| Dense     | 45.7%       | 59.3%    | 5,950        | $9.66 | 4.07 | 2.69 |
+| BM25      | 38.8%       | 50.8%    | 3,923        | $11.16 | 4.56 | 3.38 |
+
+*Model: gpt-4o-mini | max_iterations=7 | concurrency=3*
+
+**By Question Type (Hybrid Retriever, ReAct RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 44.5% | 59.3% |
+| Comparison | 1,487 | 52.2% | 62.3% |
 
 ### Self-RAG (HotpotQA Full Validation)
 
 Results pending. Run the Self-RAG configs in `configs/self_rag_*_full.yaml` to populate this table.
 
-| Retriever | Exact Match | F1 Score | Cost | LLM Calls/Q |
-|-----------|-------------|----------|------|-------------|
-| BM25      | pending     | pending  | pending | ~7       |
-| Dense     | pending     | pending  | pending | ~7       |
-| Hybrid    | pending     | pending  | pending | ~7       |
+### Cross-Architecture Comparison (Best Retriever per Architecture)
 
-*Model: gpt-4o-mini | 3 candidates per question | ~$0.014/question*
+| Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
+|--------------|------|----------------|-------------|----------|---------------|------|
+| Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
+| **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
+| Self-RAG     | Agentic  | --       | pending     | pending  | ~7            | pending |
 
-### By Question Type (Dense Retriever)
-
-| Type | Count | Exact Match | F1 |
-|------|-------|-------------|-----|
-| Bridge | 5,918 | 39.6% | 55.4% |
-| Comparison | 1,487 | 66.3% | 75.9% |
+**Key Findings:**
+- ReAct RAG with Hybrid retrieval achieves the best overall performance (46.0% EM, 59.9% F1)
+- ReAct provides +1.0% EM and +0.4% F1 improvement over Vanilla RAG's best, but at ~12x the cost
+- BM25 benefits most from ReAct's iterative retrieval (+0.6% EM over Vanilla BM25), but dense/hybrid show smaller gains
+- ReAct uses 4-5 LLM calls and 2.7-3.4 retrievals per question on average
+- BM25 with ReAct requires more iterations (4.56 LLM calls) than dense/hybrid (4.05-4.07), suggesting weaker initial retrieval drives more search attempts
 
 ## Quick Start
 
@@ -115,7 +128,7 @@ agentic_rag_benchmark/
 | Architecture | Type | Status |
 |--------------|------|--------|
 | Vanilla RAG | Baseline | ✅ Complete |
-| ReAct RAG | Agentic | ✅ Implemented (results pending) |
+| ReAct RAG | Agentic | ✅ Complete |
 | Self-RAG | Agentic | ✅ Implemented (results pending) |
 | Planner RAG | Agentic | 🔲 Planned |
 | IRCoT | Recursive | 🔲 Planned |
