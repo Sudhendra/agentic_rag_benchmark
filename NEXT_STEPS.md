@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
-**Date:** February 15, 2026  
-**Status:** Phase 2 In Progress - ReAct RAG Results Available, Self-RAG Pending  
+**Date:** February 16, 2026  
+**Status:** Phase 2 Complete - Vanilla RAG, ReAct RAG, Self-RAG Results Available  
 **Author:** Research Team
 
 ---
@@ -21,7 +21,7 @@
 | Hybrid Retriever | `src/retrieval/hybrid.py` | ✅ Complete |
 | Vanilla RAG | `src/architectures/vanilla_rag.py` | ✅ Complete |
 | ReAct RAG | `src/architectures/agentic/react_rag.py` | ✅ Complete |
-| Self-RAG | `src/architectures/agentic/self_rag.py` | ✅ Implemented (results pending) |
+| Self-RAG | `src/architectures/agentic/self_rag.py` | ✅ Complete |
 | Architecture Factory | `src/architectures/factory.py` | ✅ Complete |
 | HotpotQA Loader | `src/data/hotpotqa.py` | ✅ Complete |
 | Metrics (EM, F1) | `src/evaluation/metrics.py` | ✅ Complete |
@@ -101,6 +101,83 @@
 
 ---
 
+### Self-RAG - Full Validation Set (7,405 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Hybrid** | **40.6%** | **55.0%** | 1,893 | $2.08 | 10.75 | 0.84 |
+| Dense     | 40.6%       | 54.9%    | 4,497        | $2.13 | 10.77 | 0.84 |
+| BM25      | 37.0%       | 50.4%    | 9,666        | $2.15 | 11.02 | 0.84 |
+
+*Configuration: num_candidates=3, top_k=5, concurrency=2*
+
+**Breakdown by Question Type (Hybrid, Self-RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 36.0% | 51.5% |
+| Comparison | 1,487 | 59.0% | 68.7% |
+
+**Breakdown by Question Type (Dense, Self-RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 35.9% | 51.3% |
+| Comparison | 1,487 | 59.7% | 69.1% |
+
+**Breakdown by Question Type (BM25, Self-RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 32.1% | 46.5% |
+| Comparison | 1,487 | 56.4% | 66.1% |
+
+**Key Findings:**
+- Hybrid and Dense are nearly identical (40.6% EM both); BM25 lags by -3.6% EM
+- Self-RAG uses ~11 LLM calls per question but only ~0.84 retrieval calls, meaning the self-reflection mechanism frequently skips retrieval
+- Low retrieval usage likely hurts multi-hop performance where gathering evidence from multiple documents is critical
+- Self-RAG is the fastest architecture with Hybrid retrieval (1,893ms), benefiting heavily from cached LLM calls
+- Comparison questions (59.0% EM) are significantly easier than Bridge questions (36.0% EM), consistent with other architectures
+
+**Recommendation:** Hybrid retrieval as default for Self-RAG (best F1, lowest latency, lowest cost).
+
+---
+
+### Vanilla RAG vs ReAct RAG vs Self-RAG Comparison
+
+**Best Retriever per Architecture:**
+
+| Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
+|--------------|------|----------------|-------------|----------|---------------|------|
+| Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
+| **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
+| Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
+
+**Per-Retriever Delta (vs Vanilla RAG Baseline):**
+
+| Retriever | ReAct EM Delta | ReAct F1 Delta | Self-RAG EM Delta | Self-RAG F1 Delta |
+|-----------|---------------|---------------|-------------------|-------------------|
+| BM25      | +0.6%         | -0.7%         | -1.2%             | -1.1%             |
+| Dense     | +0.7%         | -0.2%         | -4.4%             | -4.6%             |
+| Hybrid    | +1.9%         | +1.3%         | -3.5%             | -3.6%             |
+
+**Question Type Comparison (Best Retriever per Architecture):**
+
+| Type | Vanilla EM (Dense) | ReAct EM (Hybrid) | Self-RAG EM (Hybrid) |
+|------|-------------------|-------------------|----------------------|
+| Bridge | 39.6% | 44.5% | 36.0% |
+| Comparison | 66.3% | 52.2% | 59.0% |
+
+**Key Observations:**
+- Self-RAG is the weakest of the three architectures on accuracy, underperforming even single-pass Vanilla RAG
+- Self-RAG's self-reflection approach (generate-then-critique) does not compensate for its low retrieval utilization (~0.84 calls vs ReAct's ~2.7 calls)
+- ReAct remains the only architecture to improve over Vanilla RAG, and only with Hybrid retrieval (+1.9% EM)
+- Self-RAG's cost ($2.08) falls between Vanilla ($0.79) and ReAct ($9.18), but its accuracy does not justify even this moderate cost increase
+- On Bridge questions (multi-hop), Self-RAG is the worst performer (36.0% EM), suggesting that self-reflection without iterative retrieval is insufficient for evidence gathering
+- On Comparison questions, Self-RAG (59.0%) recovers closer to Vanilla (66.3%) than ReAct (52.2%), indicating the reflection mechanism helps with straightforward comparisons but not multi-hop reasoning
+
+---
+
 ### Vanilla RAG vs ReAct RAG Comparison
 
 | Retriever | Vanilla EM | ReAct EM | Delta EM | Vanilla F1 | ReAct F1 | Delta F1 | Cost Ratio |
@@ -131,47 +208,27 @@
 
 ## Remaining Tasks
 
-### Priority 1: Self-RAG Full Evaluation (High Impact)
-
-Run Self-RAG with all three retrievers on the full validation set:
-
-```bash
-# 1. Self-RAG + BM25
-python scripts/run_experiment.py --config configs/self_rag_bm25_full.yaml
-
-# 2. Self-RAG + Dense
-python scripts/run_experiment.py --config configs/self_rag_dense_full.yaml
-
-# 3. Self-RAG + Hybrid
-python scripts/run_experiment.py --config configs/self_rag_hybrid_full.yaml
-```
-
-After each run, analyze:
-```bash
-python scripts/analyze_results.py --results results/<run_id> --breakdown --errors
-```
-
-### Priority 2: Anthropic Client Implementation
+### Priority 1: Anthropic Client Implementation
 
 **File:** `src/core/llm_client.py`
 
 Implement `AnthropicClient` to enable running all architectures with Claude models for cross-model comparison.
 
-### Priority 3: Cross-Architecture Comparison
+### Priority 2: Cross-Architecture Comparison
 
-After all 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG):
+After adding Anthropic model runs for cross-model comparison:
 ```bash
 python scripts/analyze_results.py --results results --compare
 ```
 
-Update documentation with master comparison table.
+Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. Cross-architecture comparison tables have been added above. Next comparison milestone is cross-model (OpenAI vs Anthropic).
 
-### Priority 4: Additional Datasets
+### Priority 3: Additional Datasets
 
 - MuSiQue - Multi-hop with explicit decomposition
 - 2WikiMultiHopQA - Wikipedia-based reasoning
 
-### Priority 5: Remaining Architectures
+### Priority 4: Remaining Architectures
 
 - Planner RAG (Agentic)
 - IRCoT (Recursive)
@@ -190,8 +247,11 @@ Update documentation with master comparison table.
 | `0e7932b0` | react_rag | bm25 | 7,405 | 38.8% | 50.8% | $11.16 |
 | `47103104` | react_rag | dense | 7,405 | 45.7% | 59.3% | $9.66 |
 | `25cc3f6b` | react_rag | hybrid | 7,405 | 46.0% | 59.9% | $9.18 |
+| `e8d57330` | self_rag | bm25 | 7,405 | 37.0% | 50.4% | $2.15 |
+| `72dc70f2` | self_rag | dense | 7,405 | 40.6% | 54.9% | $2.13 |
+| `7272b4eb` | self_rag | hybrid | 7,405 | 40.6% | 55.0% | $2.08 |
 
-**Total cost so far:** ~$32.32 (Vanilla: $2.32, ReAct: $30.00)
+**Total cost so far:** ~$38.68 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36)
 
 ---
 
@@ -210,3 +270,5 @@ Update documentation with master comparison table.
 2. Should we add retrieval quality metrics (recall@k, precision@k) as an additional analysis?
 3. Do we need fullwiki setting for HotpotQA, or is distractor sufficient for the paper?
 4. Should we add a cost budget limit to the experiment runner?
+5. Self-RAG underperforms Vanilla RAG despite ~11 LLM calls per question. Is the low retrieval rate (0.84 calls) the primary cause? Should we experiment with forcing retrieval (disabling the "no retrieval needed" reflection token)?
+6. How should we frame the Self-RAG results in the paper -- as evidence that self-reflection without sufficient retrieval is counterproductive for multi-hop QA?

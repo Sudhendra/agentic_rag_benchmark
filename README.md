@@ -33,9 +33,22 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 5,918 | 44.5% | 59.3% |
 | Comparison | 1,487 | 52.2% | 62.3% |
 
-### Self-RAG (HotpotQA Full Validation)
+### Self-RAG (HotpotQA Full Validation - 7,405 questions)
 
-Results pending. Run the Self-RAG configs in `configs/self_rag_*_full.yaml` to populate this table.
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Hybrid** | **40.6%** | **55.0%** | 1,893 | $2.08 | 10.75 | 0.84 |
+| Dense     | 40.6%       | 54.9%    | 4,497        | $2.13 | 10.77 | 0.84 |
+| BM25      | 37.0%       | 50.4%    | 9,666        | $2.15 | 11.02 | 0.84 |
+
+*Model: gpt-4o-mini | num_candidates=3 | concurrency=2*
+
+**By Question Type (Hybrid Retriever, Self-RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 36.0% | 51.5% |
+| Comparison | 1,487 | 59.0% | 68.7% |
 
 ### Cross-Architecture Comparison (Best Retriever per Architecture)
 
@@ -43,12 +56,15 @@ Results pending. Run the Self-RAG configs in `configs/self_rag_*_full.yaml` to p
 |--------------|------|----------------|-------------|----------|---------------|------|
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
-| Self-RAG     | Agentic  | --       | pending     | pending  | ~7            | pending |
+| Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
 
 **Key Findings:**
 - ReAct RAG with Hybrid retrieval achieves the best overall performance (46.0% EM, 59.9% F1)
 - ReAct provides +1.0% EM and +0.4% F1 improvement over Vanilla RAG's best, but at ~12x the cost
-- BM25 benefits most from ReAct's iterative retrieval (+0.6% EM over Vanilla BM25), but dense/hybrid show smaller gains
+- Self-RAG underperforms both Vanilla RAG (-4.4% EM) and ReAct RAG (-5.4% EM) despite using ~11 LLM calls per question
+- Self-RAG's self-reflection mechanism often skips retrieval (avg 0.84 retrieval calls), which may hurt multi-hop performance where evidence gathering is critical
+- Self-RAG is significantly cheaper than ReAct ($2.08 vs $9.18) but more expensive than Vanilla ($0.79), offering neither the best accuracy nor the best cost-efficiency
+- BM25 consistently underperforms Dense/Hybrid across all architectures; Dense and Hybrid are closely matched
 - ReAct uses 4-5 LLM calls and 2.7-3.4 retrievals per question on average
 - BM25 with ReAct requires more iterations (4.56 LLM calls) than dense/hybrid (4.05-4.07), suggesting weaker initial retrieval drives more search attempts
 
@@ -129,7 +145,7 @@ agentic_rag_benchmark/
 |--------------|------|--------|
 | Vanilla RAG | Baseline | ✅ Complete |
 | ReAct RAG | Agentic | ✅ Complete |
-| Self-RAG | Agentic | ✅ Implemented (results pending) |
+| Self-RAG | Agentic | ✅ Complete |
 | Planner RAG | Agentic | 🔲 Planned |
 | IRCoT | Recursive | 🔲 Planned |
 | REAP | Recursive | 🔲 Planned |

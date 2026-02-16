@@ -57,3 +57,6 @@ mlruns/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Windows reserved names
+nul
