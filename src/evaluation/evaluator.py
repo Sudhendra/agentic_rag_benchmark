@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 import time
 from collections import defaultdict
 from collections.abc import Iterable
