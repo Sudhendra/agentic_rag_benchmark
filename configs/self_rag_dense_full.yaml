@@ -13,5 +13,8 @@ retrieval:
   method: "dense"
   embedding_model: "text-embedding-3-small"
 
+evaluation:
+  max_concurrency: 2
+
 data:
   subset_size: null  # Full validation set

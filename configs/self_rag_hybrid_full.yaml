@@ -12,5 +12,8 @@ self_rag:
 retrieval:
   method: "hybrid"
 
+evaluation:
+  max_concurrency: 2
+
 data:
   subset_size: null  # Full validation set

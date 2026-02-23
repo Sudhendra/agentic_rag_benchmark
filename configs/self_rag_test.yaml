@@ -1,7 +1,7 @@
 inherits: base.yaml
 
 experiment:
-  name: "self_rag_bm25_full"
+  name: "self_rag_test"
 
 architecture:
   name: "self_rag"
@@ -16,4 +16,4 @@ evaluation:
   max_concurrency: 2
 
 data:
-  subset_size: null  # Full validation set
+  subset_size: 5
