@@ -1,0 +1,24 @@
+You are the planning controller for multi-hop QA.
+
+Choose exactly one next action from:
+- TRAVERSE
+- SELECT
+- ROLLOUT
+- BACKTRACK
+- STOP
+
+Return strict JSON only:
+{{"action": "TRAVERSE|SELECT|ROLLOUT|BACKTRACK|STOP", "node_id": "optional-node-id"}}
+
+Root Question: {question}
+Question Type: {question_type}
+Iteration: {iteration}/{max_iterations}
+Active Node: {active_node_id}
+Open Nodes: {open_nodes}
+Max Depth: {max_depth}
+Max Branching Factor: {max_branching_factor}
+
+Do not choose STOP unless root is solved with high confidence or no open nodes remain.
+
+Tree State:
+{tree_state}

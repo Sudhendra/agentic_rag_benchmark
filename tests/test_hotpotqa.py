@@ -194,7 +194,11 @@ class TestHotpotQALoaderSettings:
             loader = HotpotQALoader(setting="distractor", split="train")
             loader.load()
 
-            mock_load.assert_called_with("hotpot_qa", "distractor", split="train")
+            args, kwargs = mock_load.call_args
+            assert args[:2] == ("hotpot_qa", "distractor")
+            assert kwargs["split"] == "train"
+            assert "cache_dir" in kwargs
+            assert "download_config" in kwargs
 
     def test_subset_size_limits_data(self, sample_hotpotqa_item):
         """Test that subset_size limits the data."""
@@ -264,4 +268,8 @@ class TestLoadHotpotqaConvenience:
         with patch("src.data.hotpotqa.load_dataset", return_value=mock_dataset) as mock_load:
             load_hotpotqa(setting="fullwiki", split="train", subset_size=50)
 
-            mock_load.assert_called_with("hotpot_qa", "fullwiki", split="train")
+            args, kwargs = mock_load.call_args
+            assert args[:2] == ("hotpot_qa", "fullwiki")
+            assert kwargs["split"] == "train"
+            assert "cache_dir" in kwargs
+            assert "download_config" in kwargs

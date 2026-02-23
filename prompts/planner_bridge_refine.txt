@@ -1,0 +1,13 @@
+Refine the bridge/compositional final answer to the most specific entity/span supported by solved nodes.
+Never output yes/no for bridge/compositional questions.
+If evidence is insufficient, output unknown.
+Return answer text only (no explanation).
+
+Root Question: {question}
+Question Type: {question_type}
+Initial Answer: {initial_answer}
+
+Solved Node Summaries:
+{node_summaries}
+
+Refined Final Answer:

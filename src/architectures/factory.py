@@ -7,6 +7,7 @@ from typing import Any
 from ..core.base_rag import BaseRAG
 from ..core.llm_client import BaseLLMClient
 from ..core.retriever import BaseRetriever
+from .agentic.planner_rag import PlannerRAG
 from .agentic.react_rag import ReActRAG
 from .agentic.self_rag import SelfRAG
 from .vanilla_rag import VanillaRAG
@@ -20,6 +21,8 @@ def _resolve_architecture_config(name: str, config: dict[str, Any]) -> dict[str,
         nested_key = "react"
     elif name == "self_rag":
         nested_key = "self_rag"
+    elif name == "planner_rag":
+        nested_key = "planner"
 
     nested_config = config.get(nested_key, {}) if nested_key else {}
     merged_config = {**config, **nested_config}
@@ -42,5 +45,7 @@ def create_architecture(
         return ReActRAG(llm, retriever, resolved_config)
     if name == "self_rag":
         return SelfRAG(llm, retriever, resolved_config)
+    if name == "planner_rag":
+        return PlannerRAG(llm, retriever, resolved_config)
 
     raise ValueError(f"Unknown architecture: {name}")

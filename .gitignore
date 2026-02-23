@@ -58,5 +58,10 @@ mlruns/
 # Jupyter
 .ipynb_checkpoints/
 
+results_offline_e2e/*
+
+docs/plans/2026-02-15-planner-rag-leftover-implementation-plan.md
+docs/plans/2026-02-13-planner-rag-bridge-hardening-plan.md
+
 # Windows reserved names
 nul

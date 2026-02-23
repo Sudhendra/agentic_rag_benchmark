@@ -26,6 +26,24 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 *Model: gpt-4o-mini | max_iterations=7 | concurrency=3*
 
+### Planner RAG (HotpotQA Full Validation)
+
+Results pending. Full validation is intentionally deferred until after merge to `dev`; run the Planner configs in `configs/planner_*_full.yaml` to populate this table.
+
+Development subset check (HotpotQA validation, `subset=20`, gpt-4o-mini):
+
+| Retriever | Exact Match | F1 Score | Cost | LLM Calls/Q |
+|-----------|-------------|----------|------|-------------|
+| BM25      | 40.0%       | 51.7%    | $0.0104 | 9.20 |
+| Dense     | 50.0%       | 61.4%    | $0.0100 | 8.70 |
+| Hybrid    | 45.0%       | 56.7%    | $0.0103 | 9.15 |
+
+Planner implementation is complete and unit-tested; post-MVP optimization backlog:
+
+- Add semantic/embedding-based sibling diversification beyond lexical similarity pruning.
+- Add sentence-level supporting fact traceability for richer analysis.
+- Explore parallel sibling-node solving to reduce end-to-end latency.
+
 **By Question Type (Hybrid Retriever, ReAct RAG):**
 
 | Type | Count | Exact Match | F1 |
@@ -146,7 +164,7 @@ agentic_rag_benchmark/
 | Vanilla RAG | Baseline | ✅ Complete |
 | ReAct RAG | Agentic | ✅ Complete |
 | Self-RAG | Agentic | ✅ Complete |
-| Planner RAG | Agentic | 🔲 Planned |
+| Planner RAG | Agentic | ✅ Implemented (results pending) |
 | IRCoT | Recursive | 🔲 Planned |
 | REAP | Recursive | 🔲 Planned |
 | Recursive LM | RLM | 🔲 Planned |

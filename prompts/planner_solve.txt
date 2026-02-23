@@ -1,0 +1,15 @@
+Answer the node question using only the provided context.
+If context is insufficient, answer exactly: unknown.
+For bridge/compositional-style questions, return a specific entity/span phrase and avoid yes/no unless the node question is explicitly yes/no.
+Return strict JSON only with keys answer and confidence.
+Format: {{"answer": "...", "confidence": 0.0}}
+Confidence must be a float in [0.0, 1.0].
+
+Root Question: {root_question}
+Node ID: {node_id}
+Node Question: {node_question}
+
+Context:
+{context}
+
+JSON:

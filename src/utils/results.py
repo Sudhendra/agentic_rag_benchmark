@@ -32,6 +32,9 @@ def save_results(
         "avg_llm_calls": result.avg_llm_calls,
         "total_cost_usd": result.total_cost_usd,
         "total_tokens": result.total_tokens,
+        "metrics_by_type": {
+            question_type.value: metrics for question_type, metrics in result.metrics_by_type.items()
+        },
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
 

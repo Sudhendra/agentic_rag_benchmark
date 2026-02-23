@@ -55,27 +55,35 @@ def _build_rag(config: dict[str, Any]):
     architecture_name = config.get("architecture", {}).get("name", "vanilla_rag")
     common_config = {
         "top_k": retrieval_config.get("top_k", 5),
+    }
+    common_with_context = {
+        **common_config,
         "max_context_tokens": llm_config.get("max_tokens", 1024),
     }
 
     if architecture_name == "vanilla_rag":
         architecture_config = {
-            **common_config,
+            **common_with_context,
             "prompt_path": config.get("prompt_path", "prompts/vanilla.txt"),
             **config.get("vanilla", {}),
         }
     elif architecture_name == "react_rag":
         architecture_config = {
-            **common_config,
+            **common_with_context,
             **config.get("react", {}),
         }
     elif architecture_name == "self_rag":
         architecture_config = {
-            **common_config,
+            **common_with_context,
             **config.get("self_rag", {}),
         }
+    elif architecture_name == "planner_rag":
+        architecture_config = {
+            **common_config,
+            **config.get("planner", {}),
+        }
     else:
-        architecture_config = {**common_config, **config.get(architecture_name, {})}
+        architecture_config = {**common_with_context, **config.get(architecture_name, {})}
 
     return create_architecture(architecture_name, llm, retriever, architecture_config)
 
