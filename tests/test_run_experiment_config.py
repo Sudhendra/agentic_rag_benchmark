@@ -1,5 +1,5 @@
-import sys
 import importlib
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
