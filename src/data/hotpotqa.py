@@ -1,6 +1,9 @@
 """HotpotQA dataset loader."""
 
-from datasets import load_dataset
+import os
+from pathlib import Path
+
+from datasets import DownloadConfig, load_dataset
 
 from ..core.types import Document, Question, QuestionType
 
@@ -18,6 +21,8 @@ class HotpotQALoader:
         setting: str = "distractor",
         split: str = "validation",
         subset_size: int | None = None,
+        local_files_only: bool | None = None,
+        cache_dir: str | None = None,
     ):
         """Initialize the loader.
 
@@ -25,10 +30,24 @@ class HotpotQALoader:
             setting: 'distractor' or 'fullwiki'
             split: Dataset split ('train' or 'validation')
             subset_size: Optional limit on number of questions
+            local_files_only: Whether to force local cached dataset usage only
+            cache_dir: Optional HuggingFace datasets cache directory
         """
         self.setting = setting
         self.split = split
         self.subset_size = subset_size
+        if local_files_only is None:
+            env_value = os.getenv("HOTPOTQA_LOCAL_ONLY", "1").strip().lower()
+            self.local_files_only = env_value in {"1", "true", "yes", "on"}
+        else:
+            self.local_files_only = local_files_only
+
+        if cache_dir is None:
+            cache_dir = os.getenv(
+                "HOTPOTQA_CACHE_DIR",
+                str(Path(__file__).resolve().parents[2] / ".cache" / "huggingface" / "datasets"),
+            )
+        self.cache_dir = cache_dir
 
     def _parse_question_type(self, type_str: str) -> QuestionType:
         """Parse HotpotQA question type to enum.
@@ -53,8 +72,15 @@ class HotpotQALoader:
             - questions: List of Question objects
             - corpus: List of all Document objects from contexts
         """
-        # Load from HuggingFace
-        dataset = load_dataset("hotpot_qa", self.setting, split=self.split)
+        # Load from local HuggingFace cache by default to avoid network dependency.
+        download_config = DownloadConfig(local_files_only=self.local_files_only)
+        dataset = load_dataset(
+            "hotpot_qa",
+            self.setting,
+            split=self.split,
+            cache_dir=self.cache_dir,
+            download_config=download_config,
+        )
 
         # Apply subset if specified
         if self.subset_size:
@@ -111,6 +137,8 @@ def load_hotpotqa(
     setting: str = "distractor",
     split: str = "validation",
     subset_size: int | None = None,
+    local_files_only: bool | None = None,
+    cache_dir: str | None = None,
 ) -> tuple[list[Question], list[Document]]:
     """Convenience function to load HotpotQA.
 
@@ -118,9 +146,17 @@ def load_hotpotqa(
         setting: 'distractor' or 'fullwiki'
         split: Dataset split
         subset_size: Optional limit
+        local_files_only: Whether to force local cached dataset usage only
+        cache_dir: Optional HuggingFace datasets cache directory
 
     Returns:
         Tuple of (questions, corpus)
     """
-    loader = HotpotQALoader(setting=setting, split=split, subset_size=subset_size)
+    loader = HotpotQALoader(
+        setting=setting,
+        split=split,
+        subset_size=subset_size,
+        local_files_only=local_files_only,
+        cache_dir=cache_dir,
+    )
     return loader.load()

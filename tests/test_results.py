@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from src.core.types import ArchitectureType, BenchmarkResult, EvaluationResult, QuestionType
@@ -45,3 +46,7 @@ def test_save_results_writes_files(tmp_path: Path) -> None:
     assert (output_dir / "summary.json").exists()
     assert (output_dir / "predictions.jsonl").exists()
     assert (output_dir / "resolved_config.yaml").exists()
+
+    summary = json.loads((output_dir / "summary.json").read_text())
+    assert "metrics_by_type" in summary
+    assert summary["metrics_by_type"]["single_hop"]["f1"] == 1.0
