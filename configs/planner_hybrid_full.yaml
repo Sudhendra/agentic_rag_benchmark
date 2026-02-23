@@ -1,0 +1,30 @@
+inherits: base.yaml
+
+experiment:
+  name: "planner_hybrid_full"
+
+architecture:
+  name: "planner_rag"
+
+planner:
+  max_iterations: 5
+  max_branching_factor: 2
+  rollout_similarity_threshold: 0.85
+  max_depth: 3
+  min_stop_confidence: 0.8
+  allow_direct_answer: true
+  max_context_tokens: 4000
+  bridge_refine_enabled: true
+  bridge_refine_max_attempts: 1
+  bridge_refine_prompt_path: "prompts/planner_bridge_refine.txt"
+  bridge_generic_answers: ["yes", "no", "unknown", "none", "n/a"]
+
+retrieval:
+  method: "hybrid"
+  top_k: 3
+  bm25_weight: 0.5
+  dense_weight: 0.5
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: null  # Full validation set

@@ -1,0 +1,12 @@
+Synthesize the final answer to the root question from solved node summaries.
+Be concise and factual. Return only the answer text.
+For bridge/compositional questions, return an entity/span phrase (not yes/no) unless evidence is absent.
+For comparison questions, return exactly one token: yes or no.
+
+Root Question: {question}
+Question Type: {question_type}
+
+Solved Node Summaries:
+{node_summaries}
+
+Final Answer:

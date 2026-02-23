@@ -27,6 +27,7 @@ This document specifies the implementation of a benchmarking framework for compa
 | Agentic | ReAct | ICLR 2023 | Reason + Act paradigm |
 | Agentic | Self-RAG | ICLR 2024 | Self-reflection tokens |
 | Agentic | RAGShaper | arXiv 2601.08699 | Automated trajectory synthesis |
+| Agentic | TreePS-RAG | arXiv 2601.06922 | Tree-structured policy search actions |
 | Recursive RAG | IRCoT | ACL 2023 | Interleaved retrieval + CoT |
 | Recursive RAG | REAP | AAAI 2026 | Sub-task planning + fact extraction |
 | Recursive RAG | HIRO | arXiv 2406.09979 | Hierarchical DFS retrieval |
@@ -719,30 +720,77 @@ self_rag:
 **Category:** Agentic
 **Inspired by:** RAGShaper, TreePS-RAG
 
-**Description:** Decomposes complex questions into sub-questions, solves each, then synthesizes.
+**Description:** Uses an explicit planner action loop over a dynamic reasoning tree with
+bounded search budget. The planner chooses one action at a time (`TRAVERSE`, `SELECT`,
+`ROLLOUT`, `BACKTRACK`, `STOP`) and the solver retrieves evidence + answers the selected node.
+Pre-full-run policy: use subset validation during optimization passes; run full validation after
+merging planner changes to the integration branch.
 
 **Algorithm:**
 ```
-# Phase 1: Decompose
-sub_questions = llm.generate(f"Decompose: {question}")
+# Stage A: Gate (direct vs recursive)
+gate = llm.generate(gate_prompt(question))  # JSON: {"direct_answer": bool}
+if gate.direct_answer:
+    return llm.generate(direct_answer_prompt(question))
 
-# Phase 2: Solve sub-questions
-sub_answers = {}
-for sq in sub_questions:
-    passages = retriever.retrieve(sq)
-    sub_answers[sq] = llm.generate(sq, context=passages)
+# Stage B: Tree planning loop
+nodes = {"root": Node(question=question, depth=0, status="open")}
+active = "root"
 
-# Phase 3: Synthesize
-synthesis_prompt = format_synthesis(question, sub_questions, sub_answers)
-answer = llm.generate(synthesis_prompt)
+for i in range(max_iterations):
+    if root_is_confident(nodes["root"], min_stop_confidence):
+        break
+
+    # Planner picks next action
+    action = llm.generate(planner_prompt(tree_state(nodes), active))
+    # action JSON: {"action": "SELECT|ROLLOUT|TRAVERSE|BACKTRACK|STOP", "node_id": "..."}
+
+    if action.type == "STOP":
+        break
+    elif action.type in {"SELECT", "TRAVERSE"}:
+        target = resolve_target(action.node_id, active, nodes)
+        retrieval = retriever.retrieve(build_query(target, nodes), top_k=top_k)
+        answer = llm.generate(solver_prompt(target.question, retrieval))
+        confidence = llm.generate(confidence_prompt(target.question, answer, retrieval))
+        update_node(target, answer, confidence)
+        active = target.id
+    elif action.type == "ROLLOUT":
+        target = resolve_target(action.node_id, active, nodes)
+        children = llm.generate(rollout_prompt(target))
+        add_children(target, children[:max_branching_factor], max_depth=max_depth)
+        active = target.id
+    elif action.type == "BACKTRACK":
+        prune(active)
+        active = parent(active)
+
+# Final synthesis from solved nodes
+answer = llm.generate(synthesis_prompt(question, solved_nodes(nodes)))
+
+# Bridge/compositional hardening (bounded +1 LLM call)
+if question_type in {"bridge", "compositional"} and is_invalid_or_partial(answer):
+    answer = llm.generate(bridge_refine_prompt(question, answer, solved_nodes(nodes)))
+    if is_invalid_or_partial(answer):
+        answer = deterministic_entity_fallback(solved_nodes(nodes))
 ```
 
 **Config Schema:**
 ```yaml
 planner:
-  top_k: 5
-  max_sub_questions: 4
-  synthesis_strategy: "sequential"  # or "parallel"
+  top_k: 3
+  max_iterations: 5
+  max_branching_factor: 2
+  rollout_similarity_threshold: 0.85
+  max_depth: 3
+  min_stop_confidence: 0.8
+  allow_direct_answer: true
+  max_context_tokens: 4000
+  planner_prompt_path: "prompts/planner_action.txt"
+  solver_prompt_path: "prompts/planner_solve.txt"
+  synthesis_prompt_path: "prompts/planner_synthesize.txt"
+  bridge_refine_enabled: true
+  bridge_refine_max_attempts: 1
+  bridge_refine_prompt_path: "prompts/planner_bridge_refine.txt"
+  bridge_generic_answers: ["yes", "no", "unknown", "none", "n/a"]
 ```
 
 ---
@@ -1248,34 +1296,55 @@ logging:
 
 **configs/react.yaml:**
 ```yaml
-inherits: base
+inherits: base.yaml
 
 experiment:
-  name: "react_rag"
+  name: "react"
 
 architecture:
   name: "react_rag"
-  type: "agentic"
 
 react:
   max_iterations: 7
-  top_k: 5
-  tools:
-    - search
-    - lookup
-    - finish
+```
+
+**configs/planner.yaml:**
+```yaml
+inherits: base.yaml
+
+experiment:
+  name: "planner"
+
+architecture:
+  name: "planner_rag"
+
+planner:
+  max_iterations: 5
+  max_branching_factor: 2
+  rollout_similarity_threshold: 0.85
+  max_depth: 3
+  min_stop_confidence: 0.8
+  allow_direct_answer: true
+  max_context_tokens: 4000
+  bridge_refine_enabled: true
+  bridge_refine_max_attempts: 1
+  bridge_refine_prompt_path: "prompts/planner_bridge_refine.txt"
+  bridge_generic_answers: ["yes", "no", "unknown", "none", "n/a"]
+
+retrieval:
+  method: "bm25"
+  top_k: 3
 ```
 
 **configs/ircot.yaml:**
 ```yaml
-inherits: base
+inherits: base.yaml
 
 experiment:
   name: "ircot"
 
 architecture:
   name: "ircot"
-  type: "recursive"
 
 ircot:
   max_steps: 5
@@ -1286,14 +1355,13 @@ ircot:
 
 **configs/rlm.yaml:**
 ```yaml
-inherits: base
+inherits: base.yaml
 
 experiment:
   name: "rlm"
 
 architecture:
   name: "recursive_lm"
-  type: "rlm"
 
 rlm:
   max_depth: 3
@@ -1434,19 +1502,19 @@ async def test_vanilla_rag():
 ## 12. Implementation Phases
 
 ### Phase 1: MVP (Weeks 1-2)
-- [ ] Core types and interfaces
+- [x] Core types and interfaces
 - [ ] LLM clients (OpenAI + Anthropic)
-- [ ] SQLite cache
-- [ ] Hybrid retriever
-- [ ] Vanilla RAG
-- [ ] ReAct RAG
-- [ ] HotpotQA loader
-- [ ] Basic metrics (EM, F1)
-- [ ] Main experiment script
+- [x] SQLite cache
+- [x] Hybrid retriever
+- [x] Vanilla RAG
+- [x] ReAct RAG
+- [x] HotpotQA loader
+- [x] Basic metrics (EM, F1)
+- [x] Main experiment script
 
 ### Phase 2: Full Agentic + Recursive (Weeks 3-4)
-- [ ] Self-RAG
-- [ ] Planner RAG
+- [x] Self-RAG
+- [x] Planner RAG (inference + bridge quality hardening)
 - [ ] IRCoT
 - [ ] REAP
 - [ ] Supporting fact metrics
