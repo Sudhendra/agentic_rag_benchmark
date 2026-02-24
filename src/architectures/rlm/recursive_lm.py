@@ -26,7 +26,6 @@ from ...core.types import (
     ArchitectureType,
     Document,
     Question,
-    QuestionType,
     RAGResponse,
     ReasoningStep,
     RetrievalResult,
