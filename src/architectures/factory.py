@@ -10,6 +10,7 @@ from ..core.retriever import BaseRetriever
 from .agentic.planner_rag import PlannerRAG
 from .agentic.react_rag import ReActRAG
 from .agentic.self_rag import SelfRAG
+from .rlm.recursive_lm import RecursiveLM
 from .vanilla_rag import VanillaRAG
 
 
@@ -23,6 +24,8 @@ def _resolve_architecture_config(name: str, config: dict[str, Any]) -> dict[str,
         nested_key = "self_rag"
     elif name == "planner_rag":
         nested_key = "planner"
+    elif name == "recursive_lm":
+        nested_key = "rlm"
 
     nested_config = config.get(nested_key, {}) if nested_key else {}
     merged_config = {**config, **nested_config}
@@ -47,5 +50,7 @@ def create_architecture(
         return SelfRAG(llm, retriever, resolved_config)
     if name == "planner_rag":
         return PlannerRAG(llm, retriever, resolved_config)
+    if name == "recursive_lm":
+        return RecursiveLM(llm, retriever, resolved_config)
 
     raise ValueError(f"Unknown architecture: {name}")

@@ -1,0 +1,13 @@
+You are combining answers to sub-questions to answer an original question.
+
+Original question: {question}
+
+Sub-questions and their answers:
+{sub_qa_pairs}
+
+Combination instruction: {combine_instruction}
+
+Based on the sub-answers above, provide a SHORT, EXTRACTIVE final answer to the original question.
+Give ONLY the answer with no explanation. For example: "yes", "Paris", "42", "Albert Einstein".
+
+Answer:

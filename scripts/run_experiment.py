@@ -82,6 +82,11 @@ def _build_rag(config: dict[str, Any]):
             **common_config,
             **config.get("planner", {}),
         }
+    elif architecture_name == "recursive_lm":
+        architecture_config = {
+            **common_with_context,
+            **config.get("rlm", {}),
+        }
     else:
         architecture_config = {**common_with_context, **config.get(architecture_name, {})}
 

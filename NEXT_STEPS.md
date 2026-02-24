@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
-**Date:** February 16, 2026  
-**Status:** Phase 2 Complete - Vanilla RAG, ReAct RAG, Self-RAG Results Available  
+**Date:** February 24, 2026  
+**Status:** Phase 2+ Complete - Vanilla RAG, ReAct RAG, Self-RAG Full Results; Planner RAG, Recursive LM Subset Results Available  
 **Author:** Research Team
 
 ---
@@ -35,6 +35,10 @@
 | Configs | All vanilla, react, self_rag configs (100-sample + full) | ✅ Complete |
 | Unit Tests | `tests/test_*.py` (127 tests) | ✅ Complete |
 | Analysis Script | `scripts/analyze_results.py` | ✅ Complete |
+| Recursive LM | `src/architectures/rlm/recursive_lm.py` | ✅ Complete |
+| RLM Configs | `configs/rlm*.yaml` (BM25, Dense, Hybrid) | ✅ Complete |
+| RLM Prompts | `prompts/rlm.txt`, `prompts/rlm_combine.txt` | ✅ Complete |
+| RLM Tests | `tests/test_recursive_lm.py` (16 tests) | ✅ Complete |
 
 ---
 
@@ -143,7 +147,43 @@
 
 ---
 
-### Vanilla RAG vs ReAct RAG vs Self-RAG Comparison
+### Recursive LM - Validation Subset (100 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **BM25** | **52.0%** | 63.1% | 3,033 | $0.042 | 3.6 | 2.8 |
+| Hybrid    | 51.0%       | **67.0%** | 3,265 | $0.038 | 3.1 | 2.4 |
+| Dense     | 49.0%       | 65.2%    | 3,537        | $0.038 | 3.1 | 2.4 |
+
+*Configuration: max_depth=3, memoization=true, top_k=5, concurrency=5*
+
+**Breakdown by Question Type (BM25, Recursive LM):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 79 | 46.8% | 58.9% |
+| Comparison | 21 | 71.4% | 78.8% |
+
+**Breakdown by Question Type (Hybrid, Recursive LM):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 79 | 48.1% | 64.5% |
+| Comparison | 21 | 61.9% | 76.5% |
+
+**Key Findings:**
+- RLM shows strong subset results: 52.0% EM (BM25), 67.0% F1 (Hybrid)
+- Extremely cost-efficient: ~$0.0004/question vs $0.0012 (ReAct) and $0.0003 (Vanilla)
+- Low LLM overhead: 3.1-3.6 calls per question, indicating many questions answered directly without decomposition
+- BM25 surprisingly leads on EM (52.0%) while Hybrid leads on F1 (67.0%); retrievers closely matched
+- Comparison questions significantly easier (71.4% EM) than Bridge (46.8% EM), consistent with other architectures
+- Critical prompt engineering finding: v1 prompts without explicit "short extractive" instruction yielded 9-14% EM; adding formatting guidance boosted to 49-52% EM (3-5x improvement, zero architecture changes)
+
+**Recommendation:** Full validation needed to confirm subset results. BM25 for best EM, Hybrid for best F1.
+
+---
+
+### Vanilla RAG vs ReAct RAG vs Self-RAG vs Recursive LM Comparison
 
 **Best Retriever per Architecture:**
 
@@ -152,6 +192,9 @@
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
+| Recursive LM | RLM | BM25 | 52.0%* | 63.1%* | 3.6 | $0.042* |
+
+*\* Subset results (100 questions) — not directly comparable to full validation runs (7,405 questions).*
 
 **Per-Retriever Delta (vs Vanilla RAG Baseline):**
 
@@ -230,10 +273,19 @@ Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. 
 
 ### Priority 4: Remaining Architectures
 
-- Planner RAG (Agentic)
+- ~~Planner RAG (Agentic)~~ ✅ Implemented
 - IRCoT (Recursive)
 - REAP (Recursive)
-- Recursive LM (RLM)
+- ~~Recursive LM (RLM)~~ ✅ Implemented
+
+### Priority 5: Full Validation Runs
+
+Run full validation (7,405 questions) for Planner RAG and Recursive LM:
+```bash
+# Create full configs and run
+python scripts/run_experiment.py --config configs/planner_bm25_full.yaml
+python scripts/run_experiment.py --config configs/rlm.yaml --subset null
+```
 
 ---
 
@@ -250,8 +302,11 @@ Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. 
 | `e8d57330` | self_rag | bm25 | 7,405 | 37.0% | 50.4% | $2.15 |
 | `72dc70f2` | self_rag | dense | 7,405 | 40.6% | 54.9% | $2.13 |
 | `7272b4eb` | self_rag | hybrid | 7,405 | 40.6% | 55.0% | $2.08 |
+| `4c86dc85` | recursive_lm | bm25 | 100 | 52.0% | 63.1% | $0.042 |
+| `9bb46d75` | recursive_lm | dense | 100 | 49.0% | 65.2% | $0.038 |
+| `f8cac4cf` | recursive_lm | hybrid | 100 | 51.0% | 67.0% | $0.038 |
 
-**Total cost so far:** ~$38.68 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36)
+**Total cost so far:** ~$38.80 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36, RLM: $0.12)
 
 ---
 
@@ -272,3 +327,5 @@ Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. 
 4. Should we add a cost budget limit to the experiment runner?
 5. Self-RAG underperforms Vanilla RAG despite ~11 LLM calls per question. Is the low retrieval rate (0.84 calls) the primary cause? Should we experiment with forcing retrieval (disabling the "no retrieval needed" reflection token)?
 6. How should we frame the Self-RAG results in the paper -- as evidence that self-reflection without sufficient retrieval is counterproductive for multi-hop QA?
+7. RLM subset results (52% EM) look strong, but subset-to-full comparisons are unreliable. Should we prioritize the full RLM validation run next, or focus on implementing IRCoT/REAP first to complete the Recursive paradigm column?
+8. RLM prompt sensitivity was extreme (9% -> 52% EM from wording changes alone). Should we include a prompt sensitivity analysis section in the paper?

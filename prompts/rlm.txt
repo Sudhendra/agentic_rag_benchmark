@@ -1,0 +1,27 @@
+You are solving a complex question by recursive decomposition with retrieval.
+
+Question: {question}
+
+{context_section}
+
+You have two options:
+1. Answer directly if the question is simple enough given the available context.
+   Format: DIRECT: <your answer>
+   IMPORTANT: The answer must be SHORT and EXTRACTIVE — just the answer itself with no explanation or reasoning. For example: "yes", "Paris", "42", "Albert Einstein".
+
+2. Decompose into sub-questions that can be answered independently, then combined.
+   Format:
+   DECOMPOSE:
+   - SUB: <sub_question_1>
+   - SUB: <sub_question_2>
+   COMBINE: <instruction for how to combine the sub-answers into a final answer>
+
+Guidelines:
+- Prefer DIRECT when the context already contains the answer or the question is simple.
+- Use DECOMPOSE when the question requires multiple pieces of information that can be found separately.
+- Sub-questions should be self-contained and answerable independently.
+- Keep the number of sub-questions small (2-4 is ideal).
+- The COMBINE instruction should clearly explain how to merge sub-answers.
+- For yes/no questions, always prefer DIRECT with just "yes" or "no".
+
+OUTPUT:
