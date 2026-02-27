@@ -147,6 +147,48 @@
 
 ---
 
+### Planner RAG - Full Validation Set (7,405 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **33.7%** | **44.9%** | 4,629 | $4.03 | 8.13 | 2.33 |
+| Hybrid    | 33.5%       | 44.5%    | 6,857        | $3.98 | 8.14 | 2.34 |
+| BM25      | 27.7%       | 37.7%    | 14,618       | $4.09 | 8.43 | 2.30 |
+
+*Configuration: max_iterations=5, max_branching_factor=2, top_k=5, concurrency=2*
+
+**Breakdown by Question Type (Dense, Planner RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 33.9% | 47.7% |
+| Comparison | 1,487 | 32.8% | 33.9% |
+
+**Breakdown by Question Type (Hybrid, Planner RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 34.3% | 47.9% |
+| Comparison | 1,487 | 30.5% | 31.3% |
+
+**Breakdown by Question Type (BM25, Planner RAG):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 28.1% | 40.4% |
+| Comparison | 1,487 | 26.1% | 26.8% |
+
+**Key Findings:**
+- Planner RAG significantly underperforms all other architectures on full validation (best: 33.7% EM with Dense)
+- Dense and Hybrid are nearly tied (33.7% vs 33.5% EM); BM25 lags significantly (27.7% EM)
+- Planner RAG uses ~8 LLM calls and ~2.3 retrieval calls per question
+- Despite higher retrieval usage than Self-RAG, performance is worse, suggesting tree-based planning introduces error accumulation
+- Bridge and Comparison questions perform nearly identically (33.9% vs 32.8% EM with Dense), unlike other architectures where Comparison >> Bridge
+
+**Recommendation:** Do not use Planner RAG for HotpotQA. The tree-based planning approach appears to over-decompose questions, leading to worse accuracy than even single-pass retrieval.
+
+---
+
 ### Recursive LM - Validation Subset (100 questions, gpt-4o-mini)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
@@ -192,24 +234,25 @@
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
+| Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |
 | Recursive LM | RLM | BM25 | 52.0%* | 63.1%* | 3.6 | $0.042* |
 
 *\* Subset results (100 questions) — not directly comparable to full validation runs (7,405 questions).*
 
 **Per-Retriever Delta (vs Vanilla RAG Baseline):**
 
-| Retriever | ReAct EM Delta | ReAct F1 Delta | Self-RAG EM Delta | Self-RAG F1 Delta |
-|-----------|---------------|---------------|-------------------|-------------------|
-| BM25      | +0.6%         | -0.7%         | -1.2%             | -1.1%             |
-| Dense     | +0.7%         | -0.2%         | -4.4%             | -4.6%             |
-| Hybrid    | +1.9%         | +1.3%         | -3.5%             | -3.6%             |
+| Retriever | ReAct EM Delta | ReAct F1 Delta | Self-RAG EM Delta | Self-RAG F1 Delta | Planner EM Delta | Planner F1 Delta |
+|-----------|---------------|---------------|-------------------|-------------------|------------------|-------------------|
+| BM25      | +0.6%         | -0.7%         | -1.2%             | -1.1%             | -10.5%           | -13.8%            |
+| Dense     | +0.7%         | -0.2%         | -4.4%             | -4.6%             | -11.3%           | -14.6%            |
+| Hybrid    | +1.9%         | +1.3%         | -3.5%             | -3.6%             | -10.6%           | -14.1%            |
 
 **Question Type Comparison (Best Retriever per Architecture):**
 
-| Type | Vanilla EM (Dense) | ReAct EM (Hybrid) | Self-RAG EM (Hybrid) |
-|------|-------------------|-------------------|----------------------|
-| Bridge | 39.6% | 44.5% | 36.0% |
-| Comparison | 66.3% | 52.2% | 59.0% |
+| Type | Vanilla EM (Dense) | ReAct EM (Hybrid) | Self-RAG EM (Hybrid) | Planner EM (Dense) |
+|------|-------------------|-------------------|----------------------|-------------------|
+| Bridge | 39.6% | 44.5% | 36.0% | 33.9% |
+| Comparison | 66.3% | 52.2% | 59.0% | 32.8% |
 
 **Key Observations:**
 - Self-RAG is the weakest of the three architectures on accuracy, underperforming even single-pass Vanilla RAG
@@ -264,7 +307,7 @@ After adding Anthropic model runs for cross-model comparison:
 python scripts/analyze_results.py --results results --compare
 ```
 
-Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. Cross-architecture comparison tables have been added above. Next comparison milestone is cross-model (OpenAI vs Anthropic).
+Note: 12 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG + 3 Planner RAG) with gpt-4o-mini. RLM subset results available (100 questions). Full validation run for RLM pending. Next comparison milestone is cross-model (OpenAI vs Anthropic).
 
 ### Priority 3: Additional Datasets
 
@@ -280,12 +323,15 @@ Note: 9 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG) with gpt-4o-mini. 
 
 ### Priority 5: Full Validation Runs
 
-Run full validation (7,405 questions) for Planner RAG and Recursive LM:
+Run full validation (7,405 questions) for Recursive LM:
 ```bash
 # Create full configs and run
-python scripts/run_experiment.py --config configs/planner_bm25_full.yaml
-python scripts/run_experiment.py --config configs/rlm.yaml --subset null
+python scripts/run_experiment.py --config configs/rlm_bm25_full.yaml
+python scripts/run_experiment.py --config configs/rlm_dense_full.yaml
+python scripts/run_experiment.py --config configs/rlm_hybrid_full.yaml
 ```
+
+Note: Planner RAG full validation runs complete. RLM full validation pending.
 
 ---
 
@@ -302,11 +348,14 @@ python scripts/run_experiment.py --config configs/rlm.yaml --subset null
 | `e8d57330` | self_rag | bm25 | 7,405 | 37.0% | 50.4% | $2.15 |
 | `72dc70f2` | self_rag | dense | 7,405 | 40.6% | 54.9% | $2.13 |
 | `7272b4eb` | self_rag | hybrid | 7,405 | 40.6% | 55.0% | $2.08 |
+| `19114c8b` | planner_rag | bm25 | 7,405 | 27.7% | 37.7% | $4.09 |
+| `b4284f7f` | planner_rag | dense | 7,405 | 33.7% | 44.9% | $4.03 |
+| `dedaa9b2` | planner_rag | hybrid | 7,405 | 33.5% | 44.5% | $3.98 |
 | `4c86dc85` | recursive_lm | bm25 | 100 | 52.0% | 63.1% | $0.042 |
 | `9bb46d75` | recursive_lm | dense | 100 | 49.0% | 65.2% | $0.038 |
 | `f8cac4cf` | recursive_lm | hybrid | 100 | 51.0% | 67.0% | $0.038 |
 
-**Total cost so far:** ~$38.80 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36, RLM: $0.12)
+**Total cost so far:** ~$50.99 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36, Planner: $12.10, RLM: $0.12)
 
 ---
 
@@ -329,3 +378,4 @@ python scripts/run_experiment.py --config configs/rlm.yaml --subset null
 6. How should we frame the Self-RAG results in the paper -- as evidence that self-reflection without sufficient retrieval is counterproductive for multi-hop QA?
 7. RLM subset results (52% EM) look strong, but subset-to-full comparisons are unreliable. Should we prioritize the full RLM validation run next, or focus on implementing IRCoT/REAP first to complete the Recursive paradigm column?
 8. RLM prompt sensitivity was extreme (9% -> 52% EM from wording changes alone). Should we include a prompt sensitivity analysis section in the paper?
+9. Planner RAG severely underperforms all architectures (33.7% EM vs 45% Vanilla, 46% ReAct). Is this an implementation issue, or does tree-based planning fundamentally not work for HotpotQA-style multi-hop questions? Should we debug further or deprioritize Planner RAG for the paper?

@@ -26,30 +26,22 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 *Model: gpt-4o-mini | max_iterations=7 | concurrency=3*
 
-### Planner RAG (HotpotQA Full Validation)
+### Planner RAG (HotpotQA Full Validation - 7,405 questions)
 
-Results pending. Full validation is intentionally deferred until after merge to `dev`; run the Planner configs in `configs/planner_*_full.yaml` to populate this table.
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|------|---------------|----------|--------------|---------------------|
+| **Dense** | **33.7%** | **44.9%** | 4,629 | $4.03 | 8.13 | 2.33 |
+| Hybrid    | 33.5%       | 44.5%    | 6,857        | $3.98 | 8.14 | 2.34 |
+| BM25      | 27.7%       | 37.7%    | 14,618       | $4.09 | 8.43 | 2.30 |
 
-Development subset check (HotpotQA validation, `subset=20`, gpt-4o-mini):
+*Model: gpt-4o-mini | max_iterations=5 | max_branching_factor=2 | concurrency=2*
 
-| Retriever | Exact Match | F1 Score | Cost | LLM Calls/Q |
-|-----------|-------------|----------|------|-------------|
-| BM25      | 40.0%       | 51.7%    | $0.0104 | 9.20 |
-| Dense     | 50.0%       | 61.4%    | $0.0100 | 8.70 |
-| Hybrid    | 45.0%       | 56.7%    | $0.0103 | 9.15 |
-
-Planner implementation is complete and unit-tested; post-MVP optimization backlog:
-
-- Add semantic/embedding-based sibling diversification beyond lexical similarity pruning.
-- Add sentence-level supporting fact traceability for richer analysis.
-- Explore parallel sibling-node solving to reduce end-to-end latency.
-
-**By Question Type (Hybrid Retriever, ReAct RAG):**
+**By Question Type (Dense Retriever, Planner RAG):**
 
 | Type | Count | Exact Match | F1 |
 |------|-------|-------------|-----|
-| Bridge | 5,918 | 44.5% | 59.3% |
-| Comparison | 1,487 | 52.2% | 62.3% |
+| Bridge | 5,918 | 33.9% | 47.7% |
+| Comparison | 1,487 | 32.8% | 33.9% |
 
 ### Self-RAG (HotpotQA Full Validation - 7,405 questions)
 
@@ -96,6 +88,7 @@ RLM implementation is complete and unit-tested; full validation run pending.
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
+| Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |
 | Recursive LM | RLM | BM25 | 52.0%* | 63.1%* | 3.6 | $0.042* |
 
 *\* Subset results (100 questions) — not directly comparable to full validation runs (7,405 questions). Full run pending.*
@@ -103,6 +96,8 @@ RLM implementation is complete and unit-tested; full validation run pending.
 **Key Findings:**
 - ReAct RAG with Hybrid retrieval achieves the best overall performance on full validation (46.0% EM, 59.9% F1)
 - ReAct provides +1.0% EM and +0.4% F1 improvement over Vanilla RAG's best, but at ~12x the cost
+- Planner RAG significantly underperforms all other architectures (33.7% EM with Dense), despite using 8+ LLM calls per question
+- Planner RAG's tree-based planning approach appears to over-decompose questions, leading to higher error accumulation across sub-answers
 - Self-RAG underperforms both Vanilla RAG (-4.4% EM) and ReAct RAG (-5.4% EM) despite using ~11 LLM calls per question
 - Self-RAG's self-reflection mechanism often skips retrieval (avg 0.84 retrieval calls), which may hurt multi-hop performance where evidence gathering is critical
 - Self-RAG is significantly cheaper than ReAct ($2.08 vs $9.18) but more expensive than Vanilla ($0.79), offering neither the best accuracy nor the best cost-efficiency
@@ -189,7 +184,7 @@ agentic_rag_benchmark/
 | Vanilla RAG | Baseline | ✅ Complete |
 | ReAct RAG | Agentic | ✅ Complete |
 | Self-RAG | Agentic | ✅ Complete |
-| Planner RAG | Agentic | ✅ Implemented (results pending) |
+| Planner RAG | Agentic | ✅ Complete |
 | IRCoT | Recursive | 🔲 Planned |
 | REAP | Recursive | 🔲 Planned |
 | Recursive LM | RLM | ✅ Implemented (full results pending) |

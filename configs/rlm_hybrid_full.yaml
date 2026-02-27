@@ -1,0 +1,25 @@
+inherits: base.yaml
+
+experiment:
+  name: "rlm_hybrid_full"
+
+architecture:
+  name: "recursive_lm"
+
+rlm:
+  max_depth: 3
+  memoization: true
+  max_context_tokens: 4000
+
+retrieval:
+  method: "hybrid"
+  top_k: 5
+  bm25_weight: 0.5
+  dense_weight: 0.5
+  embedding_model: "text-embedding-3-small"
+
+evaluation:
+  max_concurrency: 2
+
+data:
+  subset_size: null
