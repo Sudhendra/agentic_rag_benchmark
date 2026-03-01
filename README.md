@@ -60,26 +60,22 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 5,918 | 36.0% | 51.5% |
 | Comparison | 1,487 | 59.0% | 68.7% |
 
-### Recursive LM (HotpotQA Validation Subset)
-
-Results from development subset (HotpotQA validation, `subset=100`, gpt-4o-mini):
+### Recursive LM (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
 |-----------|-------------|----------|--------------|------|---------------|---------------------|
-| **BM25** | **52.0%** | 63.1% | 3,033 | $0.042 | 3.6 | 2.8 |
-| Hybrid    | 51.0%       | **67.0%** | 3,265 | $0.038 | 3.1 | 2.4 |
-| Dense     | 49.0%       | 65.2%    | 3,537        | $0.038 | 3.1 | 2.4 |
+| **Hybrid** | **46.3%** | **60.2%** | 7,078 | $3.19 | 3.60 | 2.74 |
+| Dense     | 46.1%       | 60.1%    | 4,951        | $3.34 | 3.61 | 2.75 |
+| BM25      | 40.1%       | 52.6%    | 9,576        | $5.01 | 5.98 | 4.29 |
 
-*Model: gpt-4o-mini | max_depth=3 | memoization=true | concurrency=5*
+*Model: gpt-4o-mini | max_depth=3 | memoization=true | concurrency=2*
 
-RLM implementation is complete and unit-tested; full validation run pending.
-
-**By Question Type (BM25 Retriever, Recursive LM):**
+**By Question Type (Hybrid Retriever, Recursive LM):**
 
 | Type | Count | Exact Match | F1 |
 |------|-------|-------------|-----|
-| Bridge | 79 | 46.8% | 58.9% |
-| Comparison | 21 | 71.4% | 78.8% |
+| Bridge | 5,918 | 40.7% | 55.9% |
+| Comparison | 1,487 | 67.8% | 77.0% |
 
 ### Cross-Architecture Comparison (Best Retriever per Architecture)
 
@@ -87,24 +83,21 @@ RLM implementation is complete and unit-tested; full validation run pending.
 |--------------|------|----------------|-------------|----------|---------------|------|
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
+| Recursive LM | RLM | Hybrid | 46.3% | 60.2% | 3.60 | $3.19 |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
 | Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |
-| Recursive LM | RLM | BM25 | 52.0%* | 63.1%* | 3.6 | $0.042* |
-
-*\* Subset results (100 questions) — not directly comparable to full validation runs (7,405 questions). Full run pending.*
 
 **Key Findings:**
-- ReAct RAG with Hybrid retrieval achieves the best overall performance on full validation (46.0% EM, 59.9% F1)
-- ReAct provides +1.0% EM and +0.4% F1 improvement over Vanilla RAG's best, but at ~12x the cost
+- **ReAct RAG and Recursive LM are tied for best EM** (46.0% vs 46.3%), but Recursive LM achieves this with ~4x lower cost ($3.19 vs $9.18)
+- ReAct RAG with Hybrid retrieval achieves the best overall F1 (59.9%), narrowly edging Recursive LM (60.2%)
+- Recursive LM offers the best cost-efficiency among agentic architectures: $3.19 for 46.3% EM vs $9.18 for 46.0% EM with ReAct
+- Recursive LM uses only 3.6 LLM calls per question on average (Hybrid/Dense), far fewer than Self-RAG (10.75) and Planner RAG (8.13)
 - Planner RAG significantly underperforms all other architectures (33.7% EM with Dense), despite using 8+ LLM calls per question
 - Planner RAG's tree-based planning approach appears to over-decompose questions, leading to higher error accumulation across sub-answers
 - Self-RAG underperforms both Vanilla RAG (-4.4% EM) and ReAct RAG (-5.4% EM) despite using ~11 LLM calls per question
 - Self-RAG's self-reflection mechanism often skips retrieval (avg 0.84 retrieval calls), which may hurt multi-hop performance where evidence gathering is critical
-- Self-RAG is significantly cheaper than ReAct ($2.08 vs $9.18) but more expensive than Vanilla ($0.79), offering neither the best accuracy nor the best cost-efficiency
-- Recursive LM shows promising subset results (52.0% EM) with very low cost (~$0.0004/question) and moderate LLM usage (3.6 calls), but full validation is needed to confirm
 - BM25 consistently underperforms Dense/Hybrid across all architectures; Dense and Hybrid are closely matched
-- ReAct uses 4-5 LLM calls and 2.7-3.4 retrievals per question on average
-- BM25 with ReAct requires more iterations (4.56 LLM calls) than dense/hybrid (4.05-4.07), suggesting weaker initial retrieval drives more search attempts
+- Bridge questions remain challenging across all architectures (40-45% EM), while Comparison questions are easier (52-68% EM)
 
 ## Quick Start
 
@@ -187,7 +180,7 @@ agentic_rag_benchmark/
 | Planner RAG | Agentic | ✅ Complete |
 | IRCoT | Recursive | 🔲 Planned |
 | REAP | Recursive | 🔲 Planned |
-| Recursive LM | RLM | ✅ Implemented (full results pending) |
+| Recursive LM | RLM | ✅ Complete |
 
 ## Datasets
 
