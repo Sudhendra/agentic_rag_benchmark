@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "planner_musique_bm25_full"
+
+architecture:
+  name: "planner_rag"
+
+retrieval:
+  method: "bm25"
+
+data:
+  dataset: "musique"
+  subset_size: null

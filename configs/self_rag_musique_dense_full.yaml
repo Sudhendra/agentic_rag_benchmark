@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "self_rag_musique_dense_full"
+
+architecture:
+  name: "self_rag"
+
+retrieval:
+  method: "dense"
+
+data:
+  dataset: "musique"
+  subset_size: null

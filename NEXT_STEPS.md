@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
-**Date:** February 24, 2026  
-**Status:** Phase 2+ Complete - Vanilla RAG, ReAct RAG, Self-RAG Full Results; Planner RAG, Recursive LM Subset Results Available  
+**Date:** March 3, 2026  
+**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Self-RAG, Planner RAG, Recursive LM Full HotpotQA Results; Vanilla RAG MuSiQue Results Available
 **Author:** Research Team
 
 ---
@@ -300,6 +300,29 @@
 
 ---
 
+### Vanilla RAG - MuSiQue Full Validation Set (2,417 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost |
+|-----------|-------------|----------|--------------|------|
+| **Dense** | **12.6%** | **24.3%** | 1,089 | $0.27 |
+| Hybrid    | 12.0%       | 23.5%    | 1,484        | $0.27 |
+| BM25      | 6.9%        | 16.3%    | 1,251        | $0.26 |
+
+**Breakdown by Question Type (Dense, Vanilla RAG on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 17.1% | 29.6% |
+| Compositional | ~300 | 7.7% | 18.6% |
+
+**Key Findings:**
+- MuSiQue is significantly harder than HotpotQA: 12.6% EM vs 45.0% EM for Vanilla RAG
+- Dense retrieval remains the best retriever for MuSiQue (+5.7% EM over BM25)
+- Compositional questions (7.7% EM) are much harder than Bridge questions (17.1% EM)
+- The explicit decomposition in MuSiQue appears to require more sophisticated reasoning than single-pass retrieval can handle
+
+---
+
 ## Remaining Tasks
 
 ### Priority 1: Anthropic Client Implementation
@@ -319,8 +342,8 @@ Note: 12 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG + 3 Planner RAG) w
 
 ### Priority 3: Additional Datasets
 
-- MuSiQue - Multi-hop with explicit decomposition
-- 2WikiMultiHopQA - Wikipedia-based reasoning
+- ~~MuSiQue~~ ✅ Vanilla RAG results available
+- 2WikiMultiHopQA - Vanilla RAG pending
 
 ### Priority 4: Remaining Architectures
 
@@ -345,6 +368,8 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 
 ## Completed Results Summary
 
+### HotpotQA (7,405 questions)
+
 | Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
 |--------|-------------|-----------|-----------|-----|-----|------|
 | `74d7b162` | vanilla_rag | bm25 | 7,405 | 38.2% | 51.5% | $0.77 |
@@ -363,7 +388,21 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `a381842d` | recursive_lm | dense | 7,405 | 46.1% | 60.1% | $3.34 |
 | `9b4f7587` | recursive_lm | bm25 | 7,405 | 40.1% | 52.6% | $5.01 |
 
-**Total cost so far:** ~$62.53 (Vanilla: $2.32, ReAct: $30.00, Self-RAG: $6.36, Planner: $12.10, RLM: $11.54)
+**HotpotQA Total cost:** ~$62.53
+
+### MuSiQue (2,417 questions)
+
+| Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
+|--------|-------------|-----------|-----------|-----|-----|------|
+| `eecfa8d0` | vanilla_rag | bm25 | 2,417 | 6.9% | 16.3% | $0.26 |
+| `e1c01e60` | vanilla_rag | dense | 2,417 | 12.6% | 24.3% | $0.27 |
+| `db4e2728` | vanilla_rag | hybrid | 2,417 | 12.0% | 23.5% | $0.27 |
+
+**MuSiQue Total cost:** ~$0.80
+
+---
+
+**Total cost so far:** ~$63.33
 
 ---
 

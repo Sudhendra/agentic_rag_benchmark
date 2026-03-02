@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "react_musique_dense_full"
+
+architecture:
+  name: "react_rag"
+
+retrieval:
+  method: "dense"
+
+data:
+  dataset: "musique"
+  subset_size: null

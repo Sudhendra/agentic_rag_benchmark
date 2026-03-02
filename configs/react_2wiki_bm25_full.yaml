@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "react_2wiki_bm25_full"
+
+architecture:
+  name: "react_rag"
+
+retrieval:
+  method: "bm25"
+
+data:
+  dataset: "2wikimultihop"
+  subset_size: null

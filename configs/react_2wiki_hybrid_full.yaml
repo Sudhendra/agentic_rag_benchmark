@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "react_2wiki_hybrid_full"
+
+architecture:
+  name: "react_rag"
+
+retrieval:
+  method: "hybrid"
+
+data:
+  dataset: "2wikimultihop"
+  subset_size: null

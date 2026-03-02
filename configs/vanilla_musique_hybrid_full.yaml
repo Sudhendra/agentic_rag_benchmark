@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "vanilla_musique_hybrid_full"
+
+architecture:
+  name: "vanilla_rag"
+
+retrieval:
+  method: "hybrid"
+
+data:
+  dataset: "musique"
+  subset_size: null

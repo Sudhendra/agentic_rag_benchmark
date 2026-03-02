@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "rlm_musique_dense_full"
+
+architecture:
+  name: "recursive_lm"
+
+retrieval:
+  method: "dense"
+
+data:
+  dataset: "musique"
+  subset_size: null

@@ -16,6 +16,23 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 *Model: gpt-4o-mini | Dense retrieval uses text-embedding-3-small*
 
+### Vanilla RAG Baseline (MuSiQue Full Validation - 2,417 questions)
+
+| Retriever | Exact Match | F1 Score | Cost |
+|-----------|-------------|----------|------|
+| **Dense** | **12.6%** | **24.3%** | $0.27 |
+| Hybrid    | 12.0%       | 23.5%    | $0.27 |
+| BM25      | 6.9%        | 16.3%    | $0.26 |
+
+*Model: gpt-4o-mini | Dense retrieval uses text-embedding-3-small*
+
+**By Question Type (Dense Retriever, Vanilla RAG on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 17.1% | 29.6% |
+| Compositional | ~300 | 7.7% | 18.6% |
+
 ### ReAct RAG (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
@@ -185,8 +202,8 @@ agentic_rag_benchmark/
 ## Datasets
 
 - **HotpotQA** (implemented) - Multi-hop QA with bridge/comparison questions
-- **MuSiQue** (planned) - Multi-hop with explicit decomposition
-- **2WikiMultiHopQA** (planned) - Wikipedia-based reasoning
+- **MuSiQue** (implemented) - Multi-hop with explicit decomposition
+- **2WikiMultiHopQA** (implemented) - Wikipedia-based reasoning
 
 ## License
 

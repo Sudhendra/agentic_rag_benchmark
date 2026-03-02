@@ -13,6 +13,8 @@ if str(ROOT_DIR) not in sys.path:
 from src.architectures.factory import create_architecture
 from src.core.llm_client import create_llm_client
 from src.data.hotpotqa import load_hotpotqa
+from src.data.musique import load_musique
+from src.data.wiki2hop import load_2wiki
 from src.evaluation.evaluator import Evaluator
 from src.retrieval.hybrid import create_retriever
 from src.utils.cache import SQLiteCache
@@ -104,14 +106,25 @@ async def run_experiment(config: dict[str, Any]) -> Path:
 
     data_config = config.get("data", {})
     dataset_name = data_config.get("dataset", "hotpotqa")
-    if dataset_name != "hotpotqa":
-        raise ValueError(f"Unsupported dataset: {dataset_name}")
 
-    questions, corpus = load_hotpotqa(
-        setting=data_config.get("setting", "distractor"),
-        split=data_config.get("split", "validation"),
-        subset_size=data_config.get("subset_size"),
-    )
+    if dataset_name == "hotpotqa":
+        questions, corpus = load_hotpotqa(
+            setting=data_config.get("setting", "distractor"),
+            split=data_config.get("split", "validation"),
+            subset_size=data_config.get("subset_size"),
+        )
+    elif dataset_name == "musique":
+        questions, corpus = load_musique(
+            split=data_config.get("split", "validation"),
+            subset_size=data_config.get("subset_size"),
+        )
+    elif dataset_name == "2wikimultihop":
+        questions, corpus = load_2wiki(
+            split=data_config.get("split", "validation"),
+            subset_size=data_config.get("subset_size"),
+        )
+    else:
+        raise ValueError(f"Unsupported dataset: {dataset_name}")
 
     await rag.retriever.index(corpus)
 

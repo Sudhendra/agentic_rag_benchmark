@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "rlm_2wiki_hybrid_full"
+
+architecture:
+  name: "recursive_lm"
+
+retrieval:
+  method: "hybrid"
+
+data:
+  dataset: "2wikimultihop"
+  subset_size: null

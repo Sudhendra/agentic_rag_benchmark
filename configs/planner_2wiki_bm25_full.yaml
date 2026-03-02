@@ -1,0 +1,14 @@
+inherits: base.yaml
+
+experiment:
+  name: "planner_2wiki_bm25_full"
+
+architecture:
+  name: "planner_rag"
+
+retrieval:
+  method: "bm25"
+
+data:
+  dataset: "2wikimultihop"
+  subset_size: null
