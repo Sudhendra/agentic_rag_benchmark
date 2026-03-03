@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 3, 2026  
-**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Self-RAG, Planner RAG, Recursive LM Full HotpotQA Results; Vanilla RAG MuSiQue Results Available
+**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Planner RAG, Recursive LM Full HotpotQA Results; Vanilla RAG, ReAct RAG, Planner RAG MuSiQue Results Available
 **Author:** Research Team
 
 ---
@@ -323,6 +323,58 @@
 
 ---
 
+### ReAct RAG - MuSiQue Full Validation Set (2,417 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **19.7%** | **27.8%** | 9,374 | $5.24 | 5.57 | 4.67 |
+| Hybrid    | 19.3%       | 28.1%    | 8,876        | $5.15 | 5.60 | 4.69 |
+| BM25      | 11.9%       | 18.0%    | 11,703       | $5.74 | 6.09 | 5.49 |
+
+*Configuration: max_iterations=7, top_k=5, concurrency=3*
+
+**Breakdown by Question Type (Dense, ReAct RAG on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 23.6% | 33.9% |
+| Compositional | ~300 | 15.5% | 21.2% |
+
+**Key Findings:**
+- ReAct RAG significantly improves over Vanilla RAG on MuSiQue: +7.1% EM (19.7% vs 12.6%)
+- ReAct provides larger gains on MuSiQue than HotpotQA (+7.1% vs +0.7%), showing iterative retrieval helps more on harder datasets
+- BM25 with ReAct requires more iterations (6.09 LLM calls, 5.49 retrievals) vs Dense/Hybrid (~5.6 LLM, ~4.7 retrievals)
+- Bridge questions (23.6% EM) remain harder than Compositional (15.5% EM), similar to Vanilla RAG pattern
+- Cost is ~19x higher than Vanilla RAG ($5.24 vs $0.27) but provides substantial accuracy gains
+
+---
+
+### Planner RAG - MuSiQue Full Validation Set (2,417 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **15.8%** | **25.9%** | 6,227 | $2.08 | 10.15 | 2.77 |
+| Hybrid    | 14.6%       | 24.3%    | 12,642       | $2.03 | 10.20 | 2.75 |
+| BM25      | 7.5%        | 15.1%    | 11,760       | $2.07 | 10.81 | 2.59 |
+
+*Configuration: max_iterations=5, max_branching_factor=2, top_k=5, concurrency=2*
+
+**Breakdown by Question Type (Dense, Planner RAG on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 21.1% | 33.0% |
+| Compositional | ~300 | 10.1% | 18.2% |
+
+**Key Findings:**
+- Planner RAG outperforms Vanilla RAG on MuSiQue: +3.2% EM (15.8% vs 12.6%), unlike HotpotQA where it underperformed
+- Planner RAG underperforms ReAct RAG on MuSiQue: -3.9% EM (15.8% vs 19.7%)
+- Dense is the best retriever for Planner RAG on MuSiQue (+8.3% EM over BM25)
+- Planner RAG uses ~10 LLM calls per question but only ~2.8 retrieval calls, suggesting decomposition doesn't drive more retrieval
+- Bridge questions (21.1% EM) are harder than Compositional (10.1% EM), consistent with other architectures
+
+---
+
 ## Remaining Tasks
 
 ### Priority 1: Anthropic Client Implementation
@@ -397,12 +449,18 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `eecfa8d0` | vanilla_rag | bm25 | 2,417 | 6.9% | 16.3% | $0.26 |
 | `e1c01e60` | vanilla_rag | dense | 2,417 | 12.6% | 24.3% | $0.27 |
 | `db4e2728` | vanilla_rag | hybrid | 2,417 | 12.0% | 23.5% | $0.27 |
+| `85e4a6b9` | react_rag | bm25 | 2,417 | 11.9% | 18.0% | $5.74 |
+| `8d4736d4` | react_rag | dense | 2,417 | 19.7% | 27.8% | $5.24 |
+| `f34150a9` | react_rag | hybrid | 2,417 | 19.3% | 28.1% | $5.15 |
+| `6cc7eba1` | planner_rag | bm25 | 2,417 | 7.5% | 15.1% | $2.07 |
+| `66516cec` | planner_rag | dense | 2,417 | 15.8% | 25.9% | $2.08 |
+| `dc3a1e2e` | planner_rag | hybrid | 2,417 | 14.6% | 24.3% | $2.03 |
 
-**MuSiQue Total cost:** ~$0.80
+**MuSiQue Total cost:** ~$23.11
 
 ---
 
-**Total cost so far:** ~$63.33
+**Total cost so far:** ~$85.64
 
 ---
 
