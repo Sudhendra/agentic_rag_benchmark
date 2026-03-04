@@ -84,6 +84,23 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | ~2,100 | 15.8% | 28.0% |
 | Compositional | ~300 | 7.1% | 17.9% |
 
+### Recursive LM (MuSiQue Full Validation - 2,417 questions)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **16.7%** | **28.9%** | 8,772 | $2.10 | 7.41 | 5.32 |
+| Hybrid    | 16.5%       | 28.6%    | 13,235       | $2.14 | 7.83 | 5.59 |
+| BM25      | 9.8%        | 19.8%    | 13,753       | $3.09 | 12.29 | 8.51 |
+
+*Model: gpt-4o-mini | max_depth=3 | memoization=true | concurrency=2*
+
+**By Question Type (Dense Retriever, Recursive LM on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 21.3% | 34.9% |
+| Compositional | ~300 | 11.7% | 22.4% |
+
 ### ReAct RAG (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
@@ -145,7 +162,24 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 5,918 | 40.7% | 55.9% |
 | Comparison | 1,487 | 67.8% | 77.0% |
 
-### Cross-Architecture Comparison (Best Retriever per Architecture)
+### MuSiQue Cross-Architecture Comparison (Best Retriever per Architecture)
+
+| Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
+|--------------|------|----------------|-------------|----------|---------------|------|
+| Vanilla RAG  | Baseline | Dense    | 12.6%       | 24.3%    | 1.0           | $0.27 |
+| **ReAct RAG** | **Agentic** | **Dense** | **19.7%** | **27.8%** | **5.57** | **$5.24** |
+| Recursive LM | RLM | Dense | 16.7% | 28.9% | 7.41 | $2.10 |
+| Planner RAG  | Agentic  | Dense    | 15.8%       | 25.9%    | 10.15         | $2.08 |
+| Self-RAG     | Agentic  | Dense   | 11.6%       | 23.2%    | 13.79         | $1.00 |
+
+**Key MuSiQue Findings:**
+- **ReAct RAG leads on MuSiQue** with 19.7% EM, outperforming all other architectures
+- Recursive LM is second best at 16.7% EM, followed by Planner RAG (15.8%), Vanilla RAG (12.6%), and Self-RAG (11.6%)
+- Unlike HotpotQA, ReAct significantly outperforms Vanilla RAG on MuSiQue (+7.1% EM)
+- Self-RAG underperforms Vanilla RAG on MuSiQue (-1.0% EM), consistent with HotpotQA pattern
+- All architectures except Self-RAG outperform the Vanilla RAG baseline on MuSiQue
+
+### Cross-Architecture Comparison (HotpotQA Best Retriever per Architecture)
 
 | Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
 |--------------|------|----------------|-------------|----------|---------------|------|

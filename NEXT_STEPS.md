@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 3, 2026  
-**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM Full HotpotQA Results; Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG MuSiQue Results Available
+**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Pending
 **Author:** Research Team
 
 ---
@@ -232,7 +232,27 @@
 
 ---
 
-### Vanilla RAG vs ReAct RAG vs Self-RAG vs Recursive LM Comparison
+### MuSiQue Cross-Architecture Comparison (Best Retriever per Architecture)
+
+| Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
+|--------------|------|----------------|-------------|----------|---------------|------|
+| Vanilla RAG  | Baseline | Dense    | 12.6%       | 24.3%    | 1.0           | $0.27 |
+| **ReAct RAG** | **Agentic** | **Dense** | **19.7%** | **27.8%** | **5.57** | **$5.24** |
+| Recursive LM | RLM | Dense | 16.7% | 28.9% | 7.41 | $2.10 |
+| Planner RAG  | Agentic  | Dense    | 15.8%       | 25.9%    | 10.15         | $2.08 |
+| Self-RAG     | Agentic  | Dense   | 11.6%       | 23.2%    | 13.79         | $1.00 |
+
+**Key MuSiQue Findings:**
+- **ReAct RAG leads on MuSiQue** with 19.7% EM, outperforming all other architectures
+- Recursive LM is second best at 16.7% EM, followed by Planner RAG (15.8%), Vanilla RAG (12.6%), and Self-RAG (11.6%)
+- Unlike HotpotQA, ReAct significantly outperforms Vanilla RAG on MuSiQue (+7.1% EM)
+- Self-RAG underperforms Vanilla RAG on MuSiQue (-1.0% EM), consistent with HotpotQA pattern
+- All architectures except Self-RAG outperform the Vanilla RAG baseline on MuSiQue
+- Dense retrieval is the best retriever for all architectures on MuSiQue
+
+---
+
+### Vanilla RAG vs ReAct RAG vs Self-RAG vs Recursive LM Comparison (HotpotQA)
 
 **Best Retriever per Architecture:**
 
@@ -401,6 +421,31 @@
 
 ---
 
+### Recursive LM - MuSiQue Full Validation Set (2,417 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **16.7%** | **28.9%** | 8,772 | $2.10 | 7.41 | 5.32 |
+| Hybrid    | 16.5%       | 28.6%    | 13,235       | $2.14 | 7.83 | 5.59 |
+| BM25      | 9.8%        | 19.8%    | 13,753       | $3.09 | 12.29 | 8.51 |
+
+*Configuration: max_depth=3, memoization=true, top_k=5, concurrency=2*
+
+**Breakdown by Question Type (Dense, Recursive LM on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 21.3% | 34.9% |
+| Compositional | ~300 | 11.7% | 22.4% |
+
+**Key Findings:**
+- ReAct RAG leads on MuSiQue with 19.7% EM, followed by RLM at 16.7% EM
+- RLM outperforms Planner RAG (15.8%) and Self-RAG (11.6%) on MuSiQue
+- RLM uses ~7.4 LLM calls with ~5.3 retrieval calls, more balanced than Self-RAG
+- BM25 with RLM requires significantly more iterations (12.29 LLM calls, 8.51 retrievals) than Dense/Hybrid
+
+---
+
 ## Remaining Tasks
 
 ### Priority 1: Anthropic Client Implementation
@@ -420,7 +465,7 @@ Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with g
 
 ### Priority 3: Additional Datasets
 
-- ~~MuSiQue~~ ✅ Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG results available
+- ~~MuSiQue~~ ✅ Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM results available
 - 2WikiMultiHopQA - Pending
 
 ### Priority 4: Remaining Architectures
@@ -484,12 +529,15 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `b666a9d4` | self_rag | bm25 | 2,417 | 6.8% | 16.3% | $0.98 |
 | `1c0a526f` | self_rag | dense | 2,417 | 11.6% | 23.2% | $1.00 |
 | `b6cd2de9` | self_rag | hybrid | 2,417 | 10.8% | 22.3% | $0.95 |
+| `32f5bafa` | recursive_lm | bm25 | 2,417 | 9.8% | 19.8% | $3.09 |
+| `f01337dd` | recursive_lm | dense | 2,417 | 16.7% | 28.9% | $2.10 |
+| `99900bcd` | recursive_lm | hybrid | 2,417 | 16.5% | 28.6% | $2.14 |
 
-**MuSiQue Total cost:** ~$27.04
+**MuSiQue Total cost:** ~$34.37
 
 ---
 
-**Total cost so far:** ~$89.57
+**Total cost so far:** ~$96.90
 
 ---
 
