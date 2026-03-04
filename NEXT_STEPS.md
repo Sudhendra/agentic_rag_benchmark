@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 3, 2026  
-**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Planner RAG, Recursive LM Full HotpotQA Results; Vanilla RAG, ReAct RAG, Planner RAG MuSiQue Results Available
+**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM Full HotpotQA Results; Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG MuSiQue Results Available
 **Author:** Research Team
 
 ---
@@ -375,6 +375,32 @@
 
 ---
 
+### Self-RAG - MuSiQue Full Validation Set (2,417 questions, gpt-4o-mini)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| **Dense** | **11.6%** | **23.2%** | 4,290 | $1.00 | 13.79 | 0.95 |
+| Hybrid    | 10.8%       | 22.3%    | 977          | $0.95 | 13.57 | 0.95 |
+| BM25      | 6.8%        | 16.3%    | 6,630        | $0.98 | 14.10 | 0.95 |
+
+*Configuration: num_candidates=3, top_k=5, concurrency=2*
+
+**Breakdown by Question Type (Dense, Self-RAG on MuSiQue):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | ~2,100 | 15.8% | 28.0% |
+| Compositional | ~300 | 7.1% | 17.9% |
+
+**Key Findings:**
+- Self-RAG underperforms Vanilla RAG on MuSiQue: -1.0% EM (11.6% vs 12.6%), similar to HotpotQA pattern
+- Self-RAG underperforms ReAct RAG on MuSiQue: -8.1% EM (11.6% vs 19.7%)
+- Self-RAG uses ~14 LLM calls per question but only ~0.95 retrieval calls, meaning self-reflection frequently skips retrieval
+- Low retrieval usage severely hurts multi-hop performance on MuSiQue
+- Bridge questions (15.8% EM) are harder than Compositional (7.1% EM), consistent with other architectures
+
+---
+
 ## Remaining Tasks
 
 ### Priority 1: Anthropic Client Implementation
@@ -390,12 +416,12 @@ After adding Anthropic model runs for cross-model comparison:
 python scripts/analyze_results.py --results results --compare
 ```
 
-Note: 12 full runs complete (3 Vanilla + 3 ReAct + 3 Self-RAG + 3 Planner RAG) with gpt-4o-mini. RLM subset results available (100 questions). Full validation run for RLM pending. Next comparison milestone is cross-model (OpenAI vs Anthropic).
+Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with gpt-4o-mini on HotpotQA and MuSiQue. IRCoT/REAP pending. Next comparison milestone is cross-model (OpenAI vs Anthropic).
 
 ### Priority 3: Additional Datasets
 
-- ~~MuSiQue~~ ✅ Vanilla RAG results available
-- 2WikiMultiHopQA - Vanilla RAG pending
+- ~~MuSiQue~~ ✅ Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG results available
+- 2WikiMultiHopQA - Pending
 
 ### Priority 4: Remaining Architectures
 
@@ -414,7 +440,7 @@ python scripts/run_experiment.py --config configs/rlm_dense_full.yaml
 python scripts/run_experiment.py --config configs/rlm_hybrid_full.yaml
 ```
 
-Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM). IRCoT/REAP pending.
+Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT/REAP pending.
 
 ---
 
@@ -455,12 +481,15 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `6cc7eba1` | planner_rag | bm25 | 2,417 | 7.5% | 15.1% | $2.07 |
 | `66516cec` | planner_rag | dense | 2,417 | 15.8% | 25.9% | $2.08 |
 | `dc3a1e2e` | planner_rag | hybrid | 2,417 | 14.6% | 24.3% | $2.03 |
+| `b666a9d4` | self_rag | bm25 | 2,417 | 6.8% | 16.3% | $0.98 |
+| `1c0a526f` | self_rag | dense | 2,417 | 11.6% | 23.2% | $1.00 |
+| `b6cd2de9` | self_rag | hybrid | 2,417 | 10.8% | 22.3% | $0.95 |
 
-**MuSiQue Total cost:** ~$23.11
+**MuSiQue Total cost:** ~$27.04
 
 ---
 
-**Total cost so far:** ~$85.64
+**Total cost so far:** ~$89.57
 
 ---
 
