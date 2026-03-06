@@ -1,0 +1,7 @@
+inherits: reap.yaml
+
+experiment:
+  name: "reap_hybrid"
+
+retrieval:
+  method: "hybrid"
