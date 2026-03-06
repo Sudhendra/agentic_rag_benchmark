@@ -513,6 +513,14 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 
 **HotpotQA Total cost:** ~$62.53
 
+### IRCoT Smoke Validation (HotpotQA subset)
+
+| Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
+|--------|-------------|-----------|-----------|-----|-----|------|
+| `5c01f49b` | ircot_rag | bm25 | 5 | 40.0% | 64.4% | $0.0028 |
+
+*Model: gpt-4o-mini | max_steps=4 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+
 ### MuSiQue (2,417 questions)
 
 | Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
