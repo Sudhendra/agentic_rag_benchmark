@@ -1,0 +1,14 @@
+You are solving a multi-hop question with interleaved retrieval.
+
+Use the retrieved evidence and prior reasoning to write exactly one next reasoning sentence.
+If you now know the final answer, output `[ANSWER] <answer>` instead.
+
+Question: {question}
+
+Evidence:
+{context}
+
+Reasoning so far:
+{reasoning_history}
+
+Write one next reasoning sentence or `[ANSWER] <answer>`.

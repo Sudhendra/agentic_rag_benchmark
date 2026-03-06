@@ -471,7 +471,7 @@ Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with g
 ### Priority 4: Remaining Architectures
 
 - ~~Planner RAG (Agentic)~~ ✅ Implemented
-- IRCoT (Recursive)
+- ~~IRCoT (Recursive)~~ ✅ Implemented (subset smoke run complete; full validation configs added)
 - REAP (Recursive)
 - ~~Recursive LM (RLM)~~ ✅ Implemented
 
@@ -485,7 +485,7 @@ python scripts/run_experiment.py --config configs/rlm_dense_full.yaml
 python scripts/run_experiment.py --config configs/rlm_hybrid_full.yaml
 ```
 
-Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT/REAP pending.
+Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT is now implemented with subset smoke validation complete; full validation runs remain. REAP is still pending.
 
 ---
 

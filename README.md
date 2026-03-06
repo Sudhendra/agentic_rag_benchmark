@@ -280,7 +280,7 @@ agentic_rag_benchmark/
 | ReAct RAG | Agentic | ✅ Complete |
 | Self-RAG | Agentic | ✅ Complete |
 | Planner RAG | Agentic | ✅ Complete |
-| IRCoT | Recursive | 🔲 Planned |
+| IRCoT | Recursive | ✅ Implemented |
 | REAP | Recursive | 🔲 Planned |
 | Recursive LM | RLM | ✅ Complete |
 
