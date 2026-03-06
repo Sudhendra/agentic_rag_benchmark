@@ -1,0 +1,9 @@
+Break the multi-hop question into explicit REAP requirements.
+
+Return strict JSON only with keys `user_goal` and `requirements`.
+Each requirement must contain `requirement_id`, `question`, `depends_on`, and `status`.
+Use `status: pending` for newly created requirements.
+
+Question: {question}
+
+JSON:
