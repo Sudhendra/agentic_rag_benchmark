@@ -162,9 +162,20 @@ class REAPRAG(BaseRAG):
         num_llm_calls += 1
         total_tokens += tokens_used
         total_cost += cost
-        decomposition_payload = self._extract_json_block(decomposition_text)
-        user_goal = str(decomposition_payload.get("user_goal") or question.text).strip()
-        plan = self._normalize_plan(decomposition_payload.get("requirements", []))
+        try:
+            decomposition_payload = self._extract_json_block(decomposition_text)
+            user_goal = str(decomposition_payload.get("user_goal") or question.text).strip()
+            plan = self._normalize_plan(decomposition_payload.get("requirements", []))
+        except ValueError:
+            user_goal = question.text
+            plan = [
+                {
+                    "requirement_id": "r1",
+                    "question": question.text,
+                    "depends_on": [],
+                    "status": "pending",
+                }
+            ]
 
         step_id += 1
         reasoning_chain.append(
@@ -202,7 +213,7 @@ class REAPRAG(BaseRAG):
                     "next_actions": self._fallback_next_actions(plan),
                 }
             action_name = "replan" if should_replan else "plan"
-            plan = self._merge_plan(plan, planner_payload.get("updated_plan", plan))
+            plan = self._merge_plan(plan, planner_payload.get("updated_plan") or plan)
             next_actions = self._filter_executable_actions(
                 plan,
                 self._normalize_actions(planner_payload.get("next_actions", [])),
@@ -620,9 +631,12 @@ class REAPRAG(BaseRAG):
         lowered_llm_answer = llm_answer.strip().lower()
 
         if REAPRAG._is_comparison_question(lowered_question):
-            if any(phrase in lowered_llm_answer for phrase in {"same", "yes", "are of the same"}):
+            if (
+                re.search(r"\b(yes|same)\b", lowered_llm_answer)
+                or "are of the same" in lowered_llm_answer
+            ):
                 return "yes"
-            if any(phrase in lowered_llm_answer for phrase in {"not", "different", "no"}):
+            if re.search(r"\b(no|not|different)\b", lowered_llm_answer):
                 return "no"
 
         if any(keyword in lowered_question for keyword in {"position", "role", "title", "office"}):

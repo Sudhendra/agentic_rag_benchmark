@@ -254,6 +254,118 @@ def test_select_final_answer_prefers_exact_title_for_position_question():
     assert answer == "Chief of Protocol of the United States"
 
 
+def test_select_final_answer_does_not_treat_unknown_as_no():
+    answer = REAPRAG._select_final_answer(
+        question_text="Were Scott Derrickson and Ed Wood of the same nationality?",
+        plan=[{"requirement_id": "r1", "status": "resolved", "depends_on": []}],
+        facts=[],
+        llm_answer="unknown",
+    )
+    assert answer == "unknown"
+
+
+@pytest.mark.asyncio
+async def test_reap_recovers_from_malformed_decomposition_output(
+    mock_llm, bridge_question, sample_corpus
+):
+    retriever = AsyncMock()
+    retriever.retrieve.side_effect = [
+        make_retrieval_result(bridge_question.text, sample_corpus[:2]),
+    ]
+    mock_llm.generate.side_effect = [
+        ("not valid json", 20, 0.001),
+        (
+            '{"next_step": "EXECUTE", '
+            '"updated_plan": [{"requirement_id": "r1", "question": "Who is the mayor of the capital of France?", "depends_on": [], "status": "pending"}], '
+            '"next_actions": [{"requirement_id": "r1", "question": "Who is the mayor of the capital of France?"}]}',
+            20,
+            0.001,
+        ),
+        (
+            '{"reasoned_facts": ['
+            '{"reasoning": "The evidence points to Anne Hidalgo.", '
+            '"direct_evidence": "Anne Hidalgo is the mayor of Paris.", '
+            '"statement": "The mayor of the capital of France is Anne Hidalgo.", '
+            '"fulfills_requirement_id": "r1", '
+            '"fulfillment_level": "DIRECT_ANSWER"}'
+            "]}",
+            20,
+            0.001,
+        ),
+        ("Anne Hidalgo", 10, 0.001),
+    ]
+
+    rag = REAPRAG(mock_llm, retriever, {"max_iterations": 3, "top_k": 2})
+    response = await rag.answer(bridge_question, sample_corpus)
+
+    assert response.answer == "Anne Hidalgo"
+    assert response.reasoning_chain[0].action == "decompose"
+
+
+@pytest.mark.asyncio
+async def test_reap_recovers_when_planner_returns_null_updated_plan(
+    mock_llm, bridge_question, sample_corpus
+):
+    retriever = AsyncMock()
+    retriever.retrieve.side_effect = [
+        make_retrieval_result("What is the capital of France?", sample_corpus[:2]),
+        make_retrieval_result("Who is the mayor of Paris?", sample_corpus[1:3]),
+    ]
+    mock_llm.generate.side_effect = [
+        (
+            '{"user_goal": "Find the mayor of the capital of France.", '
+            '"requirements": ['
+            '{"requirement_id": "r1", "question": "What is the capital of France?", "depends_on": [], "status": "pending"}, '
+            '{"requirement_id": "r2", "question": "Who is the mayor of Paris?", "depends_on": ["r1"], "status": "pending"}'
+            "]}",
+            20,
+            0.001,
+        ),
+        (
+            '{"next_step": "EXECUTE", "updated_plan": null, '
+            '"next_actions": [{"requirement_id": "r1", "question": "What is the capital of France?"}]}',
+            20,
+            0.001,
+        ),
+        (
+            '{"reasoned_facts": ['
+            '{"reasoning": "Paris is directly stated.", '
+            '"direct_evidence": "Paris is the capital of France.", '
+            '"statement": "The capital of France is Paris.", '
+            '"fulfills_requirement_id": "r1", '
+            '"fulfillment_level": "DIRECT_ANSWER"}'
+            "]}",
+            20,
+            0.001,
+        ),
+        (
+            '{"next_step": "EXECUTE", '
+            '"updated_plan": [{"requirement_id": "r1", "question": "What is the capital of France?", "depends_on": [], "status": "resolved"}, '
+            '{"requirement_id": "r2", "question": "Who is the mayor of Paris?", "depends_on": ["r1"], "status": "pending"}], '
+            '"next_actions": [{"requirement_id": "r2", "question": "Who is the mayor of Paris?"}]}',
+            20,
+            0.001,
+        ),
+        (
+            '{"reasoned_facts": ['
+            '{"reasoning": "Anne Hidalgo is directly stated.", '
+            '"direct_evidence": "Anne Hidalgo is the mayor of Paris.", '
+            '"statement": "The mayor of Paris is Anne Hidalgo.", '
+            '"fulfills_requirement_id": "r2", '
+            '"fulfillment_level": "DIRECT_ANSWER"}'
+            "]}",
+            20,
+            0.001,
+        ),
+        ("Anne Hidalgo", 10, 0.001),
+    ]
+
+    rag = REAPRAG(mock_llm, retriever, {"max_iterations": 4, "top_k": 2})
+    response = await rag.answer(bridge_question, sample_corpus)
+
+    assert response.answer == "Anne Hidalgo"
+
+
 @pytest.mark.asyncio
 async def test_reap_handles_direct_fact_extraction_flow(mock_llm, bridge_question, sample_corpus):
     retriever = AsyncMock()

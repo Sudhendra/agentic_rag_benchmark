@@ -177,6 +177,21 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 3 | 66.7% | 88.9% |
 | Comparison | 2 | 0.0% | 27.8% |
 
+### REAP (HotpotQA Subset Smoke Validation - 5 questions)
+
+| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
+|-----------|-------------|----------|--------------|------|---------------|---------------------|
+| BM25      | 40.0%       | 55.0%    | 2            | $0.0067 | 9.8        | 4.0 |
+
+*Model: gpt-4o-mini | max_iterations=5 | max_active_requirements=2 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+
+**By Question Type (BM25 Retriever, REAP subset):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 3 | 33.3% | 58.3% |
+| Comparison | 2 | 50.0% | 50.0% |
+
 ### MuSiQue Cross-Architecture Comparison (Best Retriever per Architecture)
 
 | Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
