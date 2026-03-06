@@ -193,6 +193,57 @@ def test_reason_prompt_discourages_guessing_and_meta_reasoning():
     assert "Do not mention what you need to do" in prompt
 
 
+def test_final_prompt_adds_role_selection_guidance_for_position_questions():
+    rag = IRCoTRAG(AsyncMock(model="test-model"), AsyncMock(), {})
+    prompt = rag._build_final_prompt(
+        "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+        [
+            Document(
+                id="d1",
+                title="Shirley Temple",
+                text=(
+                    "Shirley Temple Black was named United States ambassador to Ghana and to "
+                    "Czechoslovakia and also served as Chief of Protocol of the United States."
+                ),
+            )
+        ],
+        [
+            (
+                'Shirley Temple, who portrayed Corliss Archer in the film "Kiss and Tell," '
+                "later served as the U.S. Ambassador to Ghana and the Chief of Protocol of the United States."
+            )
+        ],
+        "",
+    )
+    assert "The question asks for a role/title/position" in prompt
+    assert "prefer the exact office or title" in prompt
+    assert "Relevant candidate answers:" in prompt
+
+
+def test_extract_answer_candidates_for_position_question_prefers_titles():
+    candidates = IRCoTRAG._extract_answer_candidates(
+        "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+        [
+            "Shirley Temple later served as the U.S. Ambassador to Ghana and the Chief of Protocol of the United States.",
+            "As an adult, she was named United States ambassador to Ghana and to Czechoslovakia and also served as Chief of Protocol of the United States.",
+        ],
+    )
+    assert "U.S. Ambassador to Ghana" in candidates
+    assert "Chief of Protocol of the United States" in candidates
+
+
+def test_select_candidate_answer_prefers_exact_title_for_position_question():
+    answer = IRCoTRAG._select_candidate_answer(
+        "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+        [
+            "Chief of Protocol of the United States",
+            "U.S. Ambassador to Ghana",
+            "U.S. Ambassador to Czechoslovakia",
+        ],
+    )
+    assert answer == "Chief of Protocol of the United States"
+
+
 def test_prompt_file_mentions_answer_trigger():
     prompt = Path("prompts/ircot.txt").read_text()
     assert "[ANSWER]" in prompt

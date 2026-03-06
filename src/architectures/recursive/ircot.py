@@ -35,8 +35,10 @@ _DEFAULT_FINAL_PROMPT = (
     "Answer the question using the accumulated evidence below.\n"
     "Return only the final answer phrase with no explanation.\n\n"
     "Question: {question}\n\n"
+    "Answer guidance:\n{answer_guidance}\n\n"
     "Evidence:\n{context}\n\n"
     "Reasoning trace:\n{reasoning_history}\n\n"
+    "Relevant candidate answers:\n{candidate_answers}\n\n"
     "Candidate answer: {candidate_answer}\n\n"
     "Answer:"
 )
@@ -155,11 +157,18 @@ class IRCoTRAG(BaseRAG):
         final_prompt = self._build_final_prompt(
             question.text, evidence_docs, reasoning_sentences, candidate_answer
         )
-        final_messages = [{"role": "user", "content": final_prompt}]
-        final_answer, final_tokens, final_cost = await self.llm.generate(final_messages)
-        num_llm_calls += 1
-        total_tokens += final_tokens
-        total_cost += final_cost
+        extracted_candidates = self._extract_answer_candidates(question.text, reasoning_sentences)
+        selected_candidate = self._select_candidate_answer(question.text, extracted_candidates)
+        if selected_candidate:
+            final_answer = selected_candidate
+            final_tokens = 0
+            final_cost = 0.0
+        else:
+            final_messages = [{"role": "user", "content": final_prompt}]
+            final_answer, final_tokens, final_cost = await self.llm.generate(final_messages)
+            num_llm_calls += 1
+            total_tokens += final_tokens
+            total_cost += final_cost
 
         step_id += 1
         reasoning_chain.append(
@@ -213,13 +222,18 @@ class IRCoTRAG(BaseRAG):
         reasoning_sentences: list[str],
         candidate_answer: str,
     ) -> str:
+        candidate_answers = self._extract_answer_candidates(question, reasoning_sentences)
         return self.final_prompt.format(
             question=question,
+            answer_guidance=self._build_answer_guidance(question),
             context=self._build_context(
                 evidence_docs[: self.config["max_docs"]],
                 max_tokens=self.config["max_context_tokens"],
             ),
             reasoning_history="\n".join(reasoning_sentences) if reasoning_sentences else "None.",
+            candidate_answers="\n".join(f"- {answer}" for answer in candidate_answers)
+            if candidate_answers
+            else "- None",
             candidate_answer=candidate_answer or "None",
         )
 
@@ -227,6 +241,73 @@ class IRCoTRAG(BaseRAG):
         if Path(prompt_path).exists():
             return self._load_prompt_template(prompt_path)
         return default_prompt
+
+    @staticmethod
+    def _build_answer_guidance(question: str) -> str:
+        lowered = question.lower()
+        if any(keyword in lowered for keyword in {"position", "role", "title", "office"}):
+            return (
+                "The question asks for a role/title/position. If the evidence lists multiple roles, "
+                "prefer the exact office or title that best answers the asked slot rather than a broader biography detail."
+            )
+        return "Return the most directly supported answer span from the evidence."
+
+    @staticmethod
+    def _extract_answer_candidates(question: str, texts: list[str]) -> list[str]:
+        lowered_question = question.lower()
+        candidates: list[str] = []
+        seen: set[str] = set()
+
+        patterns: list[re.Pattern[str]] = []
+        if any(keyword in lowered_question for keyword in {"position", "role", "title", "office"}):
+            patterns = [
+                re.compile(
+                    r"((?:Chief|Secretary|Minister|President|Governor|Mayor|Senator|"
+                    r"Professor|Director|Commander)\s+of\s+[^.,;]+)",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"((?:U\.S\.|United States)\s+Ambassador\s+to\s+[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,2}?)(?=\s+(?:and|but|who|which)\b|[.,;]|$)",
+                    re.IGNORECASE,
+                ),
+            ]
+
+        for text in texts:
+            for pattern in patterns:
+                for match in pattern.findall(text):
+                    candidate = match.strip().rstrip(".")
+                    normalized = re.sub(r"\s+", " ", candidate.lower())
+                    if normalized in seen:
+                        continue
+                    seen.add(normalized)
+                    candidates.append(candidate)
+
+        candidates.sort(key=IRCoTRAG._candidate_priority)
+        return candidates[:5]
+
+    @staticmethod
+    def _select_candidate_answer(question: str, candidates: list[str]) -> str:
+        lowered_question = question.lower()
+        if not any(
+            keyword in lowered_question for keyword in {"position", "role", "title", "office"}
+        ):
+            return ""
+
+        for candidate in candidates:
+            lowered = candidate.lower()
+            if any(marker in lowered for marker in {"chief of", "secretary of", "minister of"}):
+                return candidate
+
+        return candidates[0] if candidates else ""
+
+    @staticmethod
+    def _candidate_priority(candidate: str) -> tuple[int, int]:
+        lowered = candidate.lower()
+        if "chief of" in lowered or "secretary of" in lowered or "minister of" in lowered:
+            return (0, len(candidate))
+        if "ambassador to" in lowered:
+            return (1, len(candidate))
+        return (2, len(candidate))
 
     def _extend_evidence(
         self,
