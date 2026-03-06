@@ -1,0 +1,20 @@
+inherits: base.yaml
+
+experiment:
+  name: "reap"
+
+architecture:
+  name: "reap_rag"
+
+reap:
+  max_iterations: 5
+  max_active_requirements: 2
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "bm25"
+  top_k: 3
+
+data:
+  subset_size: 100

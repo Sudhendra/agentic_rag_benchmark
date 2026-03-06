@@ -1,0 +1,13 @@
+Synthesize the final answer from REAP facts.
+
+Return only the final answer phrase with no explanation.
+
+Question: {question}
+
+Plan State:
+{plan_state}
+
+Known Facts:
+{facts_state}
+
+Answer:

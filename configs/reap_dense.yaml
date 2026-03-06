@@ -1,0 +1,7 @@
+inherits: reap.yaml
+
+experiment:
+  name: "reap_dense"
+
+retrieval:
+  method: "dense"

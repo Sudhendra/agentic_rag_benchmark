@@ -1,0 +1,16 @@
+Repair or update the REAP plan after partial clues or failed extraction.
+
+Return strict JSON only with keys `next_step`, `updated_plan`, and `next_actions`.
+`next_step` must be either `EXECUTE` or `SYNTHESIZE_ANSWER`.
+Adjust the plan only when the current facts suggest a better next requirement.
+
+Question: {question}
+User Goal: {user_goal}
+
+Plan State:
+{plan_state}
+
+Known Facts:
+{facts_state}
+
+JSON:

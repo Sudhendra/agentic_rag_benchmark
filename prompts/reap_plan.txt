@@ -1,0 +1,17 @@
+Plan the next REAP actions from the explicit requirement state.
+
+Return strict JSON only with keys `next_step`, `updated_plan`, and `next_actions`.
+`next_step` must be either `EXECUTE` or `SYNTHESIZE_ANSWER`.
+`next_actions` must list requirement objects with `requirement_id` and `question`.
+Prefer unresolved requirements that most directly move the user goal forward.
+
+Question: {question}
+User Goal: {user_goal}
+
+Plan State:
+{plan_state}
+
+Known Facts:
+{facts_state}
+
+JSON:

@@ -1,0 +1,18 @@
+Extract evidence-backed facts for the active REAP requirement.
+
+Return strict JSON only with key `reasoned_facts`.
+Each fact must include `reasoning`, `direct_evidence`, `statement`, `fulfills_requirement_id`, and `fulfillment_level`.
+`fulfillment_level` must be one of `DIRECT_ANSWER`, `PARTIAL_CLUE`, or `FAILED_EXTRACT`.
+Only use `DIRECT_ANSWER` when the requirement is directly answered by the evidence.
+
+Root Question: {question}
+Requirement ID: {requirement_id}
+Requirement Question: {requirement_question}
+
+Known Facts:
+{facts_state}
+
+Retrieved Context:
+{context}
+
+JSON:

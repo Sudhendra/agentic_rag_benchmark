@@ -1,0 +1,26 @@
+inherits: base.yaml
+
+experiment:
+  name: "reap_hybrid_full"
+
+architecture:
+  name: "reap_rag"
+
+reap:
+  max_iterations: 5
+  max_active_requirements: 2
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "hybrid"
+  top_k: 3
+  bm25_weight: 0.5
+  dense_weight: 0.5
+  embedding_model: "text-embedding-3-small"
+
+evaluation:
+  max_concurrency: 2
+
+data:
+  subset_size: null

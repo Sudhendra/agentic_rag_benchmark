@@ -89,6 +89,11 @@ def _build_rag(config: dict[str, Any]):
             **common_with_context,
             **config.get("ircot", {}),
         }
+    elif architecture_name == "reap_rag":
+        architecture_config = {
+            **common_with_context,
+            **config.get("reap", {}),
+        }
     elif architecture_name == "recursive_lm":
         architecture_config = {
             **common_with_context,

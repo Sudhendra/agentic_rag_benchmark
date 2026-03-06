@@ -461,7 +461,7 @@ After adding Anthropic model runs for cross-model comparison:
 python scripts/analyze_results.py --results results --compare
 ```
 
-Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with gpt-4o-mini on HotpotQA and MuSiQue. IRCoT/REAP pending. Next comparison milestone is cross-model (OpenAI vs Anthropic).
+Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with gpt-4o-mini on HotpotQA and MuSiQue. IRCoT and REAP are now implemented with subset smoke validation complete. Next comparison milestone is cross-model (OpenAI vs Anthropic).
 
 ### Priority 3: Additional Datasets
 
@@ -472,7 +472,7 @@ Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with g
 
 - ~~Planner RAG (Agentic)~~ ✅ Implemented
 - ~~IRCoT (Recursive)~~ ✅ Implemented (subset smoke run complete; full validation configs added)
-- REAP (Recursive)
+- ~~REAP (Recursive)~~ ✅ Implemented (subset smoke run complete; full validation configs added)
 - ~~Recursive LM (RLM)~~ ✅ Implemented
 
 ### Priority 5: Full Validation Runs
@@ -485,7 +485,7 @@ python scripts/run_experiment.py --config configs/rlm_dense_full.yaml
 python scripts/run_experiment.py --config configs/rlm_hybrid_full.yaml
 ```
 
-Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT is now implemented with subset smoke validation complete; full validation runs remain. REAP is still pending.
+Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT and REAP are now implemented with subset smoke validation complete; full validation runs remain for both recursive architectures.
 
 ---
 
@@ -520,6 +520,14 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `5c01f49b` | ircot_rag | bm25 | 5 | 40.0% | 64.4% | $0.0028 |
 
 *Model: gpt-4o-mini | max_steps=4 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+
+### REAP Smoke Validation (HotpotQA subset)
+
+| Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
+|--------|-------------|-----------|-----------|-----|-----|------|
+| `6c4a123e` | reap_rag | bm25 | 5 | 40.0% | 55.0% | $0.0067 |
+
+*Model: gpt-4o-mini | max_iterations=5 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
 
 ### MuSiQue (2,417 questions)
 
