@@ -1,0 +1,7 @@
+inherits: ircot.yaml
+
+experiment:
+  name: "ircot_hybrid"
+
+retrieval:
+  method: "hybrid"

@@ -1344,13 +1344,20 @@ experiment:
   name: "ircot"
 
 architecture:
-  name: "ircot"
+  name: "ircot_rag"
 
 ircot:
-  max_steps: 5
-  top_k: 3
-  retrieval_trigger: "[RETRIEVAL]"
+  max_steps: 4
+  max_context_tokens: 3000
+  max_docs: 8
   answer_trigger: "[ANSWER]"
+
+retrieval:
+  method: "bm25"
+  top_k: 3
+
+data:
+  subset_size: 100
 ```
 
 **configs/rlm.yaml:**

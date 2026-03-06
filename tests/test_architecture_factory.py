@@ -43,3 +43,16 @@ def test_create_architecture_react_merges_top_level_config(mock_llm, mock_retrie
     assert rag.config["top_k"] == 7
     assert rag.config["max_iterations"] == 3
     assert "react" not in rag.config
+
+
+def test_create_architecture_ircot_merges_top_level_config(mock_llm, mock_retriever):
+    rag = create_architecture(
+        "ircot_rag",
+        mock_llm,
+        mock_retriever,
+        {"top_k": 7, "ircot": {"max_steps": 4}},
+    )
+
+    assert rag.config["top_k"] == 7
+    assert rag.config["max_steps"] == 4
+    assert "ircot" not in rag.config

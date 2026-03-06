@@ -1,0 +1,20 @@
+inherits: base.yaml
+
+experiment:
+  name: "ircot_dense_full"
+
+architecture:
+  name: "ircot_rag"
+
+ircot:
+  max_steps: 4
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "dense"
+  top_k: 3
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: null  # Full validation set
