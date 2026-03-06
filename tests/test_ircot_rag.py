@@ -248,3 +248,14 @@ def test_prompt_file_mentions_answer_trigger():
     prompt = Path("prompts/ircot.txt").read_text()
     assert "[ANSWER]" in prompt
     assert "one next reasoning sentence" in prompt
+
+
+def test_reason_prompt_uses_configured_answer_trigger():
+    rag = IRCoTRAG(AsyncMock(model="test-model"), AsyncMock(), {"answer_trigger": "[FINAL]"})
+    prompt = rag._build_reason_prompt(
+        "Who is the mayor of the capital of France?",
+        [Document(id="d1", title="France", text="Paris is the capital of France.")],
+        [],
+    )
+    assert "[FINAL] <answer>" in prompt
+    assert "[ANSWER]" not in prompt

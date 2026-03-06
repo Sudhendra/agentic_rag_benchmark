@@ -203,16 +203,19 @@ class IRCoTRAG(BaseRAG):
         evidence_docs: list[Document],
         reasoning_sentences: list[str],
     ) -> str:
-        return self.reason_prompt.format(
+        prompt_template = self.reason_prompt.replace(
+            "`[ANSWER] <answer>`", "`{answer_trigger} <answer>`"
+        )
+        return prompt_template.format(
             answer_trigger=self.config["answer_trigger"],
             question=question,
             context=self._build_context(
                 evidence_docs[: self.config["max_docs"]],
                 max_tokens=self.config["max_context_tokens"],
             ),
-            reasoning_history="\n".join(reasoning_sentences)
-            if reasoning_sentences
-            else "None yet.",
+            reasoning_history=(
+                "\n".join(reasoning_sentences) if reasoning_sentences else "None yet."
+            ),
         )
 
     def _build_final_prompt(
@@ -231,9 +234,11 @@ class IRCoTRAG(BaseRAG):
                 max_tokens=self.config["max_context_tokens"],
             ),
             reasoning_history="\n".join(reasoning_sentences) if reasoning_sentences else "None.",
-            candidate_answers="\n".join(f"- {answer}" for answer in candidate_answers)
-            if candidate_answers
-            else "- None",
+            candidate_answers=(
+                "\n".join(f"- {answer}" for answer in candidate_answers)
+                if candidate_answers
+                else "- None"
+            ),
             candidate_answer=candidate_answer or "None",
         )
 
