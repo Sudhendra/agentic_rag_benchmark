@@ -167,6 +167,32 @@ def test_extract_query_from_reasoning_sentence():
     assert query == "France capital Paris"
 
 
+def test_extract_query_removes_meta_reasoning_prefixes_and_comparison_filler():
+    query = IRCoTRAG._extract_query(
+        "To answer whether Scott Derrickson and Ed Wood were of the same nationality, "
+        "we need the nationality of Scott Derrickson and Ed Wood."
+    )
+    assert query == "Scott Derrickson Ed Wood same nationality"
+
+
+def test_extract_query_prefers_quoted_or_capitalized_entities_over_hallucinated_tail():
+    query = IRCoTRAG._extract_query(
+        'The actress who portrayed Corliss Archer in "Kiss and Tell" was Shirley Temple.'
+    )
+    assert query == "Corliss Archer Kiss Tell Shirley Temple"
+
+
+def test_reason_prompt_discourages_guessing_and_meta_reasoning():
+    rag = IRCoTRAG(AsyncMock(model="test-model"), AsyncMock(), {})
+    prompt = rag._build_reason_prompt(
+        "Who is the mayor of the capital of France?",
+        [Document(id="d1", title="France", text="Paris is the capital of France.")],
+        [],
+    )
+    assert "Do not guess" in prompt
+    assert "Do not mention what you need to do" in prompt
+
+
 def test_prompt_file_mentions_answer_trigger():
     prompt = Path("prompts/ircot.txt").read_text()
     assert "[ANSWER]" in prompt

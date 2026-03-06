@@ -22,6 +22,8 @@ from ...core.types import (
 _DEFAULT_REASON_PROMPT = (
     "You are solving a multi-hop question with interleaved retrieval.\n\n"
     "Use the retrieved evidence and prior reasoning to write exactly one next reasoning sentence. "
+    "Do not guess. Do not mention what you need to do, what evidence is missing, or that you need to identify something. "
+    "State only the strongest grounded fact or bridgeable inference from the current evidence. "
     "If you now know the final answer, output `{answer_trigger} <answer>` instead.\n\n"
     "Question: {question}\n\n"
     "Evidence:\n{context}\n\n"
@@ -264,31 +266,64 @@ class IRCoTRAG(BaseRAG):
     def _extract_query(text: str) -> str:
         stopwords = {
             "a",
+            "actress",
             "an",
             "and",
+            "answer",
             "as",
+            "by",
             "because",
+            "determine",
             "finally",
             "for",
             "hence",
             "i",
             "if",
             "in",
+            "indeed",
+            "identify",
             "is",
             "it",
             "its",
+            "need",
             "of",
+            "portrayed",
             "so",
             "that",
             "the",
             "therefore",
             "this",
+            "those",
+            "through",
             "thus",
             "to",
+            "was",
+            "we",
+            "were",
+            "what",
+            "who",
+            "whom",
+            "which",
+            "whether",
+            "woman",
             "we",
         }
         tokens = re.findall(r"[A-Za-z0-9]+", text)
-        kept = [
-            token for token in tokens if token.lower() not in stopwords and token.lower() != "s"
-        ]
-        return " ".join(kept)
+        ordered: list[str] = []
+        seen: set[str] = set()
+
+        for token in tokens:
+            lowered = token.lower()
+            is_short_named_entity = len(token) <= 2 and token[:1].isupper()
+            if (
+                lowered in stopwords
+                or lowered == "s"
+                or (len(token) <= 2 and not is_short_named_entity)
+            ):
+                continue
+            if lowered in seen:
+                continue
+            seen.add(lowered)
+            ordered.append(token)
+
+        return " ".join(ordered)
