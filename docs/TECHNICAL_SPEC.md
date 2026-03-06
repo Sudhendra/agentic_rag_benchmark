@@ -1376,6 +1376,32 @@ rlm:
   decomposition_strategy: "adaptive"
 ```
 
+**configs/reap.yaml:**
+```yaml
+inherits: base.yaml
+
+experiment:
+  name: "reap"
+
+architecture:
+  name: "reap_rag"
+
+reap:
+  max_iterations: 5
+  max_active_requirements: 2
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "bm25"
+  top_k: 3
+
+data:
+  subset_size: 100
+```
+
+REAP uses an explicit requirement plan plus evidence-backed fact extraction loop. Each extracted fact is labeled as `DIRECT_ANSWER`, `PARTIAL_CLUE`, or `FAILED_EXTRACT`, allowing the planner to either continue execution or trigger replanning before final synthesis.
+
 ---
 
 ## 9. API Cost Management

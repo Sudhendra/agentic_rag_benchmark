@@ -296,7 +296,7 @@ agentic_rag_benchmark/
 | Self-RAG | Agentic | ✅ Complete |
 | Planner RAG | Agentic | ✅ Complete |
 | IRCoT | Recursive | ✅ Implemented |
-| REAP | Recursive | 🔲 Planned |
+| REAP | Recursive | ✅ Implemented |
 | Recursive LM | RLM | ✅ Complete |
 
 ## Datasets
