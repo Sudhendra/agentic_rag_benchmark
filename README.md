@@ -162,20 +162,36 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 5,918 | 40.7% | 55.9% |
 | Comparison | 1,487 | 67.8% | 77.0% |
 
-### IRCoT (HotpotQA Subset Smoke Validation - 5 questions)
+### IRCoT (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
 |-----------|-------------|----------|--------------|------|---------------|---------------------|
-| BM25      | 40.0%       | 64.4%    | 3,127        | $0.0028 | 4.8        | 4.8 |
+| **Hybrid** | **42.9%** | **59.9%** | 9,874 | $3.81 | 4.16 | 3.58 |
+| Dense     | 42.0%       | 59.2%    | 3,278        | $3.77 | 4.17 | 3.59 |
+| BM25      | 38.5%       | 54.7%    | 6,463        | $3.97 | 4.20 | 3.64 |
 
-*Model: gpt-4o-mini | max_steps=4 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+*Model: gpt-4o-mini | max_steps=4 | max_context_tokens=3000 | concurrency=3*
 
-**By Question Type (BM25 Retriever, IRCoT subset):**
+**By Question Type (Hybrid Retriever, IRCoT on HotpotQA):**
 
 | Type | Count | Exact Match | F1 |
 |------|-------|-------------|-----|
-| Bridge | 3 | 66.7% | 88.9% |
-| Comparison | 2 | 0.0% | 27.8% |
+| Bridge | 5,918 | 45.3% | 61.8% |
+| Comparison | 1,487 | 33.4% | 52.2% |
+
+**By Question Type (Dense Retriever, IRCoT on HotpotQA):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 44.3% | 60.9% |
+| Comparison | 1,487 | 33.0% | 52.3% |
+
+**By Question Type (BM25 Retriever, IRCoT on HotpotQA):**
+
+| Type | Count | Exact Match | F1 |
+|------|-------|-------------|-----|
+| Bridge | 5,918 | 40.2% | 56.0% |
+| Comparison | 1,487 | 31.9% | 49.6% |
 
 ### REAP (HotpotQA Subset Smoke Validation - 5 questions)
 
@@ -214,21 +230,19 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
 |--------------|------|----------------|-------------|----------|---------------|------|
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
-| **ReAct RAG** | **Agentic** | **Hybrid** | **46.0%** | **59.9%** | **4.05** | **$9.18** |
-| Recursive LM | RLM | Hybrid | 46.3% | 60.2% | 3.60 | $3.19 |
+| **Recursive LM** | **RLM** | **Hybrid** | **46.3%** | **60.2%** | **3.60** | **$3.19** |
+| ReAct RAG | Agentic | Hybrid | 46.0% | 59.9% | 4.05 | $9.18 |
+| IRCoT | Recursive | Hybrid | 42.9% | 59.9% | 4.16 | $3.81 |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
 | Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |
 
 **Key Findings:**
-- **ReAct RAG and Recursive LM are tied for best EM** (46.0% vs 46.3%), but Recursive LM achieves this with ~4x lower cost ($3.19 vs $9.18)
-- ReAct RAG with Hybrid retrieval achieves the best overall F1 (59.9%), narrowly edging Recursive LM (60.2%)
-- Recursive LM offers the best cost-efficiency among agentic architectures: $3.19 for 46.3% EM vs $9.18 for 46.0% EM with ReAct
-- Recursive LM uses only 3.6 LLM calls per question on average (Hybrid/Dense), far fewer than Self-RAG (10.75) and Planner RAG (8.13)
-- Planner RAG significantly underperforms all other architectures (33.7% EM with Dense), despite using 8+ LLM calls per question
-- Planner RAG's tree-based planning approach appears to over-decompose questions, leading to higher error accumulation across sub-answers
-- Self-RAG underperforms both Vanilla RAG (-4.4% EM) and ReAct RAG (-5.4% EM) despite using ~11 LLM calls per question
-- Self-RAG's self-reflection mechanism often skips retrieval (avg 0.84 retrieval calls), which may hurt multi-hop performance where evidence gathering is critical
-- BM25 consistently underperforms Dense/Hybrid across all architectures; Dense and Hybrid are closely matched
+- **Recursive LM leads on HotpotQA** with 46.3% EM and 60.2% F1, closely followed by ReAct RAG (46.0% EM)
+- Recursive LM is the most cost-efficient: $3.19 for 46.3% EM vs ReAct's $9.18 for 46.0% EM
+- IRCoT achieves 42.9% EM with similar cost to RLM ($3.81), making it a competitive recursive alternative
+- IRCoT uses ~4.2 LLM calls per question, comparable to ReAct (4.05) and fewer than Self-RAG (10.75)
+- Planner RAG significantly underperforms all other architectures (33.7% EM), despite using 8+ LLM calls
+- Self-RAG underperforms Vanilla RAG (-4.4% EM) due to low retrieval usage (avg 0.84 calls)
 - Bridge questions remain challenging across all architectures (40-45% EM), while Comparison questions are easier (52-68% EM)
 
 ## Quick Start

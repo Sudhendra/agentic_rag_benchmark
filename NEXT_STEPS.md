@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 3, 2026  
-**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Pending
+**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM, IRCoT Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Pending
 **Author:** Research Team
 
 ---
@@ -461,31 +461,30 @@ After adding Anthropic model runs for cross-model comparison:
 python scripts/analyze_results.py --results results --compare
 ```
 
-Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) with gpt-4o-mini on HotpotQA and MuSiQue. IRCoT and REAP are now implemented with subset smoke validation complete. Next comparison milestone is cross-model (OpenAI vs Anthropic).
+Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM, IRCoT) with gpt-4o-mini on HotpotQA and MuSiQue. REAP pending. Next comparison milestone is cross-model (OpenAI vs Anthropic).
 
 ### Priority 3: Additional Datasets
 
 - ~~MuSiQue~~ ✅ Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM results available
-- 2WikiMultiHopQA - Pending
+- 2WikiMultiHopQA - All architectures pending
 
 ### Priority 4: Remaining Architectures
 
 - ~~Planner RAG (Agentic)~~ ✅ Implemented
-- ~~IRCoT (Recursive)~~ ✅ Implemented (subset smoke run complete; full validation configs added)
+- ~~IRCoT (Recursive)~~ ✅ Implemented (full validation complete)
 - ~~REAP (Recursive)~~ ✅ Implemented (subset smoke run complete; full validation configs added)
 - ~~Recursive LM (RLM)~~ ✅ Implemented
 
 ### Priority 5: Full Validation Runs
 
-Run full validation (7,405 questions) for Recursive LM:
+Run full validation (7,405 questions) for REAP:
 ```bash
-# Create full configs and run
-python scripts/run_experiment.py --config configs/rlm_bm25_full.yaml
-python scripts/run_experiment.py --config configs/rlm_dense_full.yaml
-python scripts/run_experiment.py --config configs/rlm_hybrid_full.yaml
+python scripts/run_experiment.py --config configs/reap_bm25_full.yaml
+python scripts/run_experiment.py --config configs/reap_dense_full.yaml
+python scripts/run_experiment.py --config configs/reap_hybrid_full.yaml
 ```
 
-Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM) on HotpotQA and MuSiQue. IRCoT and REAP are now implemented with subset smoke validation complete; full validation runs remain for both recursive architectures.
+Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM, IRCoT) on HotpotQA and MuSiQue. REAP full validation pending.
 
 ---
 
@@ -510,16 +509,21 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `09581743` | recursive_lm | hybrid | 7,405 | 46.3% | 60.2% | $3.19 |
 | `a381842d` | recursive_lm | dense | 7,405 | 46.1% | 60.1% | $3.34 |
 | `9b4f7587` | recursive_lm | bm25 | 7,405 | 40.1% | 52.6% | $5.01 |
+| `1c4afb94` | ircot_rag | bm25 | 7,405 | 38.5% | 54.7% | $3.97 |
+| `3e4b5fc8` | ircot_rag | dense | 7,405 | 42.0% | 59.2% | $3.77 |
+| `4d923d09` | ircot_rag | hybrid | 7,405 | 42.9% | 59.9% | $3.81 |
 
-**HotpotQA Total cost:** ~$62.53
+**HotpotQA Total cost:** ~$74.08
 
-### IRCoT Smoke Validation (HotpotQA subset)
+### IRCoT - Full Validation (HotpotQA, 7,405 questions)
 
 | Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
 |--------|-------------|-----------|-----------|-----|-----|------|
-| `5c01f49b` | ircot_rag | bm25 | 5 | 40.0% | 64.4% | $0.0028 |
+| `1c4afb94` | ircot_rag | bm25 | 7,405 | 38.5% | 54.7% | $3.97 |
+| `3e4b5fc8` | ircot_rag | dense | 7,405 | 42.0% | 59.2% | $3.77 |
+| `4d923d09` | ircot_rag | hybrid | 7,405 | 42.9% | 59.9% | $3.81 |
 
-*Model: gpt-4o-mini | max_steps=4 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+*Model: gpt-4o-mini | max_steps=4 | max_context_tokens=3000*
 
 ### REAP Smoke Validation (HotpotQA subset)
 
@@ -553,7 +557,7 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 
 ---
 
-**Total cost so far:** ~$96.90
+**Total cost so far:** ~$108.45
 
 ---
 
@@ -563,6 +567,8 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 2. **Retry hardening** - Extended `llm_client.py` retry to handle 403/PermissionDenied, connection errors, 500s; 5 attempts with longer backoff
 3. **Progress logging** - Added real-time progress output to `evaluator.py` (count, %, rate, ETA every 50 questions)
 4. **Concurrency tuning** - Reduced `max_concurrency` to 3 for ReAct configs to avoid rate limits
+5. **Embedding caching** - Added disk-based embedding cache in `dense.py` for faster subsequent runs
+6. **BadRequestError retry** - Added `openai.BadRequestError` to retry exceptions in both LLM client and Dense retriever
 
 ---
 

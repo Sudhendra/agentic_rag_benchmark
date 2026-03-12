@@ -41,7 +41,7 @@ class Wiki2HopLoader:
         if cache_dir is None:
             cache_dir = os.getenv(
                 "WIKI2HOP_CACHE_DIR",
-                str(Path(__file__).resolve().parents[2] / ".cache" / "huggingface" / "datasets"),
+                str(Path.home() / ".cache" / "huggingface" / "datasets"),
             )
         self.cache_dir = cache_dir
 
@@ -72,7 +72,7 @@ class Wiki2HopLoader:
         """
         download_config = DownloadConfig(local_files_only=self.local_files_only)
         dataset = load_dataset(
-            "xanhho/2WikiMultihopQA",
+            "framolfese/2WikiMultihopQA",
             "default",
             split=self.split,
             cache_dir=self.cache_dir,

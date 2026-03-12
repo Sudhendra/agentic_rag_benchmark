@@ -161,6 +161,7 @@ class OpenAIClient(BaseLLMClient):
                 openai.APIConnectionError,
                 openai.InternalServerError,
                 openai.PermissionDeniedError,
+                openai.BadRequestError,
             )
         ),
     )

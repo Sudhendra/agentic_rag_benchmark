@@ -1,16 +1,57 @@
 """Dense retrieval using OpenAI embeddings."""
 
+import hashlib
+import json
 import os
 import time
+from pathlib import Path
 
 import numpy as np
 import openai
 from dotenv import load_dotenv
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from ..core.retriever import BaseRetriever
 from ..core.types import Document, RetrievalResult
 
 load_dotenv()
+
+
+def _get_cache_dir() -> Path:
+    """Get the embedding cache directory."""
+    cache_dir = Path(os.getenv("EMBEDDING_CACHE_DIR", ".cache/embeddings"))
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def _get_cache_key(corpus: list[Document], model: str) -> str:
+    """Generate a cache key based on corpus and model."""
+    corpus_hash = hashlib.sha256()
+    for doc in corpus:
+        corpus_hash.update(doc.id.encode())
+        corpus_hash.update(doc.text[:1000].encode())
+
+    key_data = f"{model}_{len(corpus)}_{corpus_hash.hexdigest()[:16]}"
+    return hashlib.sha256(key_data.encode()).hexdigest()
+
+
+def _load_cached_embeddings(cache_path: Path) -> tuple[np.ndarray, list[str]] | None:
+    """Load cached embeddings if available and valid."""
+    if not cache_path.exists():
+        return None
+
+    try:
+        data = np.load(cache_path, allow_pickle=True)
+        embeddings = data["embeddings"]
+        doc_ids = data["doc_ids"].tolist()
+        return embeddings, doc_ids
+    except Exception:
+        return None
+
+
+def _save_embeddings(cache_path: Path, embeddings: np.ndarray, doc_ids: list[str]) -> None:
+    """Save embeddings to cache."""
+    np.savez(cache_path, embeddings=embeddings, doc_ids=np.array(doc_ids))
 
 
 class DenseRetriever(BaseRetriever):
@@ -40,8 +81,16 @@ class DenseRetriever(BaseRetriever):
         self.client = openai.AsyncOpenAI(api_key=api_key)
         self.embeddings: np.ndarray | None = None
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=30),
+        retry=retry_if_exception_type(
+            (openai.RateLimitError, openai.APITimeoutError, openai.BadRequestError)
+        ),
+        reraise=True,
+    )
     async def _embed_texts(self, texts: list[str]) -> np.ndarray:
-        """Embed a list of texts.
+        """Embed a list of texts with retry logic.
 
         Args:
             texts: List of texts to embed
@@ -54,6 +103,11 @@ class DenseRetriever(BaseRetriever):
         # Batch embedding requests
         for i in range(0, len(texts), self.batch_size):
             batch = texts[i : i + self.batch_size]
+
+            # Log batch info for debugging
+            batch_text = batch[0] if batch else ""
+            print(f"  Embedding batch {i // self.batch_size + 1}, first text: {batch_text[:50]}...")
+
             response = await self.client.embeddings.create(
                 model=self.model,
                 input=batch,
@@ -74,9 +128,38 @@ class DenseRetriever(BaseRetriever):
 
         # Get document texts
         texts = [doc.text for doc in corpus]
+        doc_ids = [doc.id for doc in corpus]
+
+        # Check for cached embeddings
+        cache_dir = _get_cache_dir()
+        cache_key = _get_cache_key(corpus, self.model)
+        cache_path = cache_dir / f"dense_{self.model.replace('-', '_')}_{cache_key}.npz"
+
+        print(f"DenseRetriever: Checking for cached embeddings...")
+        cached = _load_cached_embeddings(cache_path)
+
+        if cached is not None:
+            cached_embeddings, cached_doc_ids = cached
+            # Verify cache is for the same corpus
+            if len(cached_embeddings) == len(texts) and cached_doc_ids == doc_ids:
+                print(f"DenseRetriever: Loaded {len(cached_embeddings)} embeddings from cache!")
+                self.embeddings = cached_embeddings
+                self.is_indexed = True
+                return
+            else:
+                print(f"DenseRetriever: Cache size mismatch, recomputing...")
 
         # Compute embeddings
+        print(f"DenseRetriever: Computing embeddings for {len(texts)} documents...")
+        start_time = time.time()
         self.embeddings = await self._embed_texts(texts)
+        elapsed = time.time() - start_time
+        print(f"DenseRetriever: Computed embeddings in {elapsed:.1f}s")
+
+        # Save to cache
+        print(f"DenseRetriever: Saving embeddings to cache...")
+        _save_embeddings(cache_path, self.embeddings, doc_ids)
+        print(f"DenseRetriever: Cached embeddings saved!")
 
         # Normalize for cosine similarity
         norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True)
