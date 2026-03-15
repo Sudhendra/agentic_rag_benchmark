@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 3, 2026  
-**Status:** Phase 3 Complete - Vanilla RAG, ReAct RAG, Planner RAG, Self-RAG, Recursive LM, IRCoT Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Pending
+**Status:** Phase 3 Complete - All Architectures (Vanilla, ReAct, Planner, Self-RAG, Recursive LM, IRCoT, REAP) Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Pending
 **Author:** Research Team
 
 ---
@@ -477,14 +477,7 @@ Note: All full runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM, IRCoT)
 
 ### Priority 5: Full Validation Runs
 
-Run full validation (7,405 questions) for REAP:
-```bash
-python scripts/run_experiment.py --config configs/reap_bm25_full.yaml
-python scripts/run_experiment.py --config configs/reap_dense_full.yaml
-python scripts/run_experiment.py --config configs/reap_hybrid_full.yaml
-```
-
-Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM, IRCoT) on HotpotQA and MuSiQue. REAP full validation pending.
+Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, RLM, IRCoT, REAP) on HotpotQA and MuSiQue. 2WikiMultiHopQA pending.
 
 ---
 
@@ -512,26 +505,11 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 | `1c4afb94` | ircot_rag | bm25 | 7,405 | 38.5% | 54.7% | $3.97 |
 | `3e4b5fc8` | ircot_rag | dense | 7,405 | 42.0% | 59.2% | $3.77 |
 | `4d923d09` | ircot_rag | hybrid | 7,405 | 42.9% | 59.9% | $3.81 |
+| `0eb19318` | reap_rag | bm25 | 7,405 | 24.6% | 36.6% | $7.41 |
+| `c4da1615` | reap_rag | dense | 7,405 | 28.1% | 41.7% | $6.49 |
+| `f667025a` | reap_rag | hybrid | 7,405 | 27.3% | 41.1% | $6.54 |
 
-**HotpotQA Total cost:** ~$74.08
-
-### IRCoT - Full Validation (HotpotQA, 7,405 questions)
-
-| Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
-|--------|-------------|-----------|-----------|-----|-----|------|
-| `1c4afb94` | ircot_rag | bm25 | 7,405 | 38.5% | 54.7% | $3.97 |
-| `3e4b5fc8` | ircot_rag | dense | 7,405 | 42.0% | 59.2% | $3.77 |
-| `4d923d09` | ircot_rag | hybrid | 7,405 | 42.9% | 59.9% | $3.81 |
-
-*Model: gpt-4o-mini | max_steps=4 | max_context_tokens=3000*
-
-### REAP Smoke Validation (HotpotQA subset)
-
-| Run ID | Architecture | Retriever | Questions | EM | F1 | Cost |
-|--------|-------------|-----------|-----------|-----|-----|------|
-| `6c4a123e` | reap_rag | bm25 | 5 | 40.0% | 55.0% | $0.0067 |
-
-*Model: gpt-4o-mini | max_iterations=5 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+**HotpotQA Total cost:** ~$94.52
 
 ### MuSiQue (2,417 questions)
 
@@ -557,7 +535,7 @@ Note: All full validation runs complete (Vanilla, ReAct, Self-RAG, Planner RAG, 
 
 ---
 
-**Total cost so far:** ~$108.45
+**Total cost so far:** ~$128.89
 
 ---
 

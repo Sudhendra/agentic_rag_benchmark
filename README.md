@@ -193,37 +193,22 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | 5,918 | 40.2% | 56.0% |
 | Comparison | 1,487 | 31.9% | 49.6% |
 
-### REAP (HotpotQA Subset Smoke Validation - 5 questions)
+### REAP (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
 |-----------|-------------|----------|--------------|------|---------------|---------------------|
-| BM25      | 40.0%       | 55.0%    | 2            | $0.0067 | 9.8        | 4.0 |
+| **Dense** | **28.1%** | **41.7%** | 4,613 | $6.49 | 6.24 | 1.97 |
+| Hybrid    | 27.3%       | 41.1%    | 3,777        | $6.54 | 6.40 | 2.06 |
+| BM25      | 24.6%       | 36.6%    | 14,713       | $7.41 | 7.93 | 3.05 |
 
-*Model: gpt-4o-mini | max_iterations=5 | max_active_requirements=2 | subset_size=5 | smoke validation only, not directly comparable to full-validation runs*
+*Model: gpt-4o-mini | max_iterations=5 | max_active_requirements=2 | concurrency=2*
 
-**By Question Type (BM25 Retriever, REAP subset):**
+**By Question Type (Dense Retriever, REAP on HotpotQA):**
 
 | Type | Count | Exact Match | F1 |
 |------|-------|-------------|-----|
-| Bridge | 3 | 33.3% | 58.3% |
-| Comparison | 2 | 50.0% | 50.0% |
-
-### MuSiQue Cross-Architecture Comparison (Best Retriever per Architecture)
-
-| Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
-|--------------|------|----------------|-------------|----------|---------------|------|
-| Vanilla RAG  | Baseline | Dense    | 12.6%       | 24.3%    | 1.0           | $0.27 |
-| **ReAct RAG** | **Agentic** | **Dense** | **19.7%** | **27.8%** | **5.57** | **$5.24** |
-| Recursive LM | RLM | Dense | 16.7% | 28.9% | 7.41 | $2.10 |
-| Planner RAG  | Agentic  | Dense    | 15.8%       | 25.9%    | 10.15         | $2.08 |
-| Self-RAG     | Agentic  | Dense   | 11.6%       | 23.2%    | 13.79         | $1.00 |
-
-**Key MuSiQue Findings:**
-- **ReAct RAG leads on MuSiQue** with 19.7% EM, outperforming all other architectures
-- Recursive LM is second best at 16.7% EM, followed by Planner RAG (15.8%), Vanilla RAG (12.6%), and Self-RAG (11.6%)
-- Unlike HotpotQA, ReAct significantly outperforms Vanilla RAG on MuSiQue (+7.1% EM)
-- Self-RAG underperforms Vanilla RAG on MuSiQue (-1.0% EM), consistent with HotpotQA pattern
-- All architectures except Self-RAG outperform the Vanilla RAG baseline on MuSiQue
+| Bridge | 5,918 | 24.1% | 37.2% |
+| Comparison | 1,487 | 44.2% | 59.9% |
 
 ### Cross-Architecture Comparison (HotpotQA Best Retriever per Architecture)
 
@@ -232,6 +217,10 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Vanilla RAG  | Baseline | Dense    | 45.0%       | 59.5%    | 1.0           | $0.79 |
 | **Recursive LM** | **RLM** | **Hybrid** | **46.3%** | **60.2%** | **3.60** | **$3.19** |
 | ReAct RAG | Agentic | Hybrid | 46.0% | 59.9% | 4.05 | $9.18 |
+| IRCoT | Recursive | Hybrid | 42.9% | 59.9% | 4.16 | $3.81 |
+| Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
+| REAP | Recursive | Dense | 28.1% | 41.7% | 6.24 | $6.49 |
+| Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |
 | IRCoT | Recursive | Hybrid | 42.9% | 59.9% | 4.16 | $3.81 |
 | Self-RAG     | Agentic  | Hybrid   | 40.6%       | 55.0%    | 10.75         | $2.08 |
 | Planner RAG  | Agentic  | Dense    | 33.7%       | 44.9%    | 8.13          | $4.03 |

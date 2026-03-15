@@ -1,7 +1,6 @@
 """Dense retrieval using OpenAI embeddings."""
 
 import hashlib
-import json
 import os
 import time
 from pathlib import Path
@@ -9,7 +8,12 @@ from pathlib import Path
 import numpy as np
 import openai
 from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from ..core.retriever import BaseRetriever
 from ..core.types import Document, RetrievalResult
@@ -85,7 +89,12 @@ class DenseRetriever(BaseRetriever):
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=30),
         retry=retry_if_exception_type(
-            (openai.RateLimitError, openai.APITimeoutError, openai.BadRequestError)
+            (
+                openai.RateLimitError,
+                openai.APITimeoutError,
+                openai.BadRequestError,
+                openai.APIConnectionError,
+            )
         ),
         reraise=True,
     )
@@ -135,7 +144,7 @@ class DenseRetriever(BaseRetriever):
         cache_key = _get_cache_key(corpus, self.model)
         cache_path = cache_dir / f"dense_{self.model.replace('-', '_')}_{cache_key}.npz"
 
-        print(f"DenseRetriever: Checking for cached embeddings...")
+        print("DenseRetriever: Checking for cached embeddings...")
         cached = _load_cached_embeddings(cache_path)
 
         if cached is not None:
@@ -147,7 +156,7 @@ class DenseRetriever(BaseRetriever):
                 self.is_indexed = True
                 return
             else:
-                print(f"DenseRetriever: Cache size mismatch, recomputing...")
+                print("DenseRetriever: Cache size mismatch, recomputing...")
 
         # Compute embeddings
         print(f"DenseRetriever: Computing embeddings for {len(texts)} documents...")
@@ -157,9 +166,9 @@ class DenseRetriever(BaseRetriever):
         print(f"DenseRetriever: Computed embeddings in {elapsed:.1f}s")
 
         # Save to cache
-        print(f"DenseRetriever: Saving embeddings to cache...")
+        print("DenseRetriever: Saving embeddings to cache...")
         _save_embeddings(cache_path, self.embeddings, doc_ids)
-        print(f"DenseRetriever: Cached embeddings saved!")
+        print("DenseRetriever: Cached embeddings saved!")
 
         # Normalize for cosine similarity
         norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True)
