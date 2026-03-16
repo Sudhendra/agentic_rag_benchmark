@@ -266,6 +266,52 @@ def analyze_errors_by_hop(
     return result
 
 
+def analyze_errors_by_question_type(
+    predictions: list[dict],
+    threshold: float = 0.5,
+) -> dict[str, dict]:
+    """Analyze error distribution by question type (Bridge/Comparison).
+
+    Args:
+        predictions: List of prediction records
+        threshold: F1 threshold for counting as error
+
+    Returns:
+        Dictionary with error statistics by question type
+    """
+    # Initialize counters
+    stats = {}
+
+    for pred in predictions:
+        qtype = pred.get("question_type", "unknown")
+        f1 = pred.get("f1", 0)
+        is_error = f1 < threshold
+
+        if qtype not in stats:
+            stats[qtype] = {"total": 0, "errors": 0, "em_sum": 0, "f1_sum": 0}
+
+        stats[qtype]["total"] += 1
+        stats[qtype]["em_sum"] += pred.get("exact_match", 0)
+        stats[qtype]["f1_sum"] += f1
+
+        if is_error:
+            stats[qtype]["errors"] += 1
+
+    # Calculate percentages
+    result = {}
+    for qtype, data in stats.items():
+        if data["total"] > 0:
+            result[qtype] = {
+                "total": data["total"],
+                "errors": data["errors"],
+                "error_rate": data["errors"] / data["total"],
+                "avg_em": data["em_sum"] / data["total"],
+                "avg_f1": data["f1_sum"] / data["total"],
+            }
+
+    return result
+
+
 def find_run_directories(results_path: Path) -> list[Path]:
     """Find all valid run directories in a results path.
 
@@ -529,6 +575,25 @@ def print_error_analysis_by_hop(hop_stats: dict, threshold: float = 0.5) -> None
                 )
 
 
+def print_error_analysis_by_qtype(qtype_stats: dict, threshold: float = 0.5) -> None:
+    """Print error analysis by question type (Bridge/Comparison)."""
+    print("\n" + "=" * 60)
+    print(f"ERROR ANALYSIS BY QUESTION TYPE (F1 < {threshold})")
+    print("=" * 60)
+
+    print("\n--- Error Rate by Question Type ---")
+    print(
+        f"{'Type':<15} {'Total':>8} {'Errors':>8} {'Error Rate':>12} {'Avg EM':>10} {'Avg F1':>10}"
+    )
+    print("-" * 65)
+
+    for qtype in sorted(qtype_stats.keys()):
+        data = qtype_stats[qtype]
+        print(
+            f"{qtype:<15} {data['total']:>8} {data['errors']:>8} {data['error_rate']:>11.1%} {data['avg_em']:>9.1%} {data['avg_f1']:>9.1%}"
+        )
+
+
 def print_comparison(rows: list[dict]) -> None:
     """Print comparison table."""
     print("\n" + "=" * 80)
@@ -673,6 +738,13 @@ def main():
                 threshold=args.error_threshold,
             )
             print_error_analysis_by_hop(hop_stats, threshold=args.error_threshold)
+
+            # Also print error analysis by question type
+            qtype_stats = analyze_errors_by_question_type(
+                results["predictions"],
+                threshold=args.error_threshold,
+            )
+            print_error_analysis_by_qtype(qtype_stats, threshold=args.error_threshold)
 
 
 if __name__ == "__main__":

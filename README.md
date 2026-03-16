@@ -311,6 +311,73 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 ---
 
+### HotpotQA Error Analysis
+
+#### Error Rate by Question Type
+
+| Architecture | Bridge EM | Bridge Error | Comparison EM | Comparison Error | Overall EM |
+|--------------|-----------|--------------|---------------|------------------|------------|
+| **Recursive LM** | 41.2% | 58.8% | **66.7%** | 33.3% | **46.3%** |
+| ReAct RAG | 44.5% | 55.5% | 52.2% | 47.8% | 46.0% |
+| IRCoT | **45.3%** | 54.7% | 33.4% | 66.6% | 42.9% |
+| Self-RAG | 36.0% | 64.0% | 59.0% | 41.0% | 40.6% |
+| Vanilla RAG | 39.6% | 60.4% | 66.3% | 33.7% | 45.0% |
+| Planner RAG | 33.9% | 66.1% | 32.8% | 67.2% | 33.7% |
+| REAP | 24.1% | 75.9% | 44.2% | 55.8% | 28.1% |
+
+#### Key HotpotQA Error Findings
+
+1. **Comparison questions are easier** - All architectures perform better on Comparison than Bridge
+2. **Recursive LM excels at Comparison** (66.7% EM) - Best on comparison questions
+3. **IRCoT struggles on Comparison** (33.4% EM) - Surprisingly weak on comparison
+4. **REAP fails on Bridge** (75.9% error rate) - Worst on multi-hop Bridge questions
+5. **Bridge vs Comparison gap varies by architecture** - IRCoT has reverse pattern (better on Bridge)
+
+#### Sample Errors - HotpotQA
+
+**Recursive LM (Best overall) - Bridge failures:**
+- Pred: "Under Secretary of State for Political Affairs" | Gold: "Chief of Protocol"
+- Pred: "New York City" | Gold: "Greenwich Village, New York City"
+
+**Recursive LM - Comparison failures:**
+- Pred: "yes" | Gold: "no"
+- Pred: "Robert Erskine Childers" | Gold: "Robert Erskine Childers DSC"
+
+**REAP (Worst) - Bridge failures:**
+- Pred: "The information is not available." | Gold: "Chief of Protocol"
+- Pred: "The 'Starbound' series by Amie Kaufman" | Gold: "Animorphs"
+
+**REAP - Comparison failures:**
+- Pred: "yes" | Gold: "no" (multiple instances)
+- Common: Binary "yes/no" confusion on comparison questions
+
+---
+
+### MuSiQue: 3-hop vs 4-hop Breaking Point
+
+#### 3-hop Failures (IRCoT)
+- Pred: "England" | Gold: "Denver"
+- Pred: "Xanana Gusmão" | Gold: "Francisco Guterres" (entity confusion)
+- Pattern: Entity confusion between related entities in same domain
+
+#### 4-hop Failures (Breaking Point)
+- Pred: "approximately 53 years" | Gold: "about 400 years" (order of magnitude error)
+- Pred: "None" | Gold: "about 400 years" (complete failure)
+- Pred: "53 years" | Gold: "about 400 years" (wrong reasoning chain)
+- Pattern: Numerical/quantitative reasoning breaks down completely
+
+#### ReAct vs IRCoT on 3-hop
+
+| Metric | ReAct | IRCoT | Difference |
+|--------|-------|-------|------------|
+| EM on 3-hop | 18.6% | 16.2% | +2.4% (ReAct better) |
+| Questions where ReAct succeeds, IRCoT fails | 79 | - | - |
+| Questions where IRCoT succeeds, ReAct fails | - | 61 | - |
+
+**Key Insight:** ReAct is better at 3-hop, IRCoT is better at 4-hop. This suggests different reasoning strategies work better at different complexity levels.
+
+---
+
 ### Generating Error Analysis
 
 To generate error analysis for any run:
@@ -319,8 +386,11 @@ To generate error analysis for any run:
 # Basic error analysis
 python scripts/analyze_results.py --results results/<run_id> --errors
 
-# Error analysis by hop count
+# Error analysis by hop count (MuSiQue)
 python scripts/analyze_results.py --results results/<run_id> --errors --hops
+
+# Error analysis by question type (HotpotQA - Bridge/Comparison)
+python scripts/analyze_results.py --results results/<run_id> --errors --breakdown
 
 # Filter by F1 threshold
 python scripts/analyze_results.py --results results/<run_id> --errors --error-threshold 0.3
