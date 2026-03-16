@@ -157,20 +157,113 @@ def extract_errors(
     for pred in predictions:
         f1 = pred.get("f1", 0)
         if f1 < threshold:
+            # Extract hop count from question_id
+            qid = pred.get("question_id", "")
+            if qid.startswith("2hop"):
+                hops = "2-hop"
+            elif qid.startswith("3hop"):
+                hops = "3-hop"
+            elif qid.startswith("4hop"):
+                hops = "4-hop"
+            elif qid.startswith("5hop"):
+                hops = "5-hop"
+            else:
+                hops = "unknown"
+
             errors.append(
                 {
-                    "question_id": pred.get("question_id", "unknown"),
+                    "question_id": qid,
                     "question_type": pred.get("question_type", "unknown"),
+                    "hops": hops,
                     "predicted": pred.get("predicted_answer", ""),
                     "gold": pred.get("gold_answer", ""),
                     "exact_match": pred.get("exact_match", 0),
                     "f1": f1,
+                    "num_retrieval_calls": pred.get("num_retrieval_calls", 0),
+                    "num_llm_calls": pred.get("num_llm_calls", 0),
+                    "latency_ms": pred.get("latency_ms", 0),
                 }
             )
 
     # Sort by F1 (worst first)
     errors.sort(key=lambda x: x["f1"])
     return errors[:max_errors]
+
+
+def analyze_errors_by_hop(
+    predictions: list[dict],
+    threshold: float = 0.5,
+) -> dict[str, dict]:
+    """Analyze error distribution by hop count and question type.
+
+    Args:
+        predictions: List of prediction records
+        threshold: F1 threshold for counting as error
+
+    Returns:
+        Dictionary with error statistics by hop count and question type
+    """
+    # Initialize counters
+    stats = {}
+    for hops in ["2-hop", "3-hop", "4-hop", "unknown"]:
+        stats[hops] = {
+            "total": 0,
+            "errors": 0,
+            "by_type": {},
+        }
+
+    for pred in predictions:
+        # Extract hop count
+        qid = pred.get("question_id", "")
+        if qid.startswith("2hop"):
+            hops = "2-hop"
+        elif qid.startswith("3hop"):
+            hops = "3-hop"
+        elif qid.startswith("4hop"):
+            hops = "4-hop"
+        else:
+            hops = "unknown"
+
+        qtype = pred.get("question_type", "unknown")
+        f1 = pred.get("f1", 0)
+        is_error = f1 < threshold
+
+        # Update total count
+        stats[hops]["total"] += 1
+
+        # Initialize type if needed
+        if qtype not in stats[hops]["by_type"]:
+            stats[hops]["by_type"][qtype] = {"total": 0, "errors": 0, "em_sum": 0, "f1_sum": 0}
+
+        stats[hops]["by_type"][qtype]["total"] += 1
+        stats[hops]["by_type"][qtype]["em_sum"] += pred.get("exact_match", 0)
+        stats[hops]["by_type"][qtype]["f1_sum"] += f1
+
+        if is_error:
+            stats[hops]["errors"] += 1
+            stats[hops]["by_type"][qtype]["errors"] += 1
+
+    # Calculate percentages
+    result = {}
+    for hops, data in stats.items():
+        if data["total"] > 0:
+            result[hops] = {
+                "total": data["total"],
+                "errors": data["errors"],
+                "error_rate": data["errors"] / data["total"],
+                "by_type": {},
+            }
+            for qtype, type_data in data["by_type"].items():
+                if type_data["total"] > 0:
+                    result[hops]["by_type"][qtype] = {
+                        "total": type_data["total"],
+                        "errors": type_data["errors"],
+                        "error_rate": type_data["errors"] / type_data["total"],
+                        "avg_em": type_data["em_sum"] / type_data["total"],
+                        "avg_f1": type_data["f1_sum"] / type_data["total"],
+                    }
+
+    return result
 
 
 def find_run_directories(results_path: Path) -> list[Path]:
@@ -391,12 +484,49 @@ def print_errors(errors: list[dict]) -> None:
     print("=" * 60)
 
     for i, err in enumerate(errors, 1):
-        print(f"\n[{i}] Question ID: {err['question_id']} ({err['question_type']})")
+        hops = err.get("hops", "unknown")
+        retrievals = err.get("num_retrieval_calls", "?")
+        llm_calls = err.get("num_llm_calls", "?")
+
+        print(f"\n[{i}] {err['question_id']} ({err['question_type']}, {hops})")
         print(
-            f"    Predicted: {err['predicted'][:100]}{'...' if len(err['predicted']) > 100 else ''}"
+            f"    Predicted: {err['predicted'][:80]}{'...' if len(err['predicted']) > 80 else ''}"
         )
-        print(f"    Gold:      {err['gold'][:100]}{'...' if len(err['gold']) > 100 else ''}")
-        print(f"    EM: {err['exact_match']:.0f}  F1: {err['f1']:.4f}")
+        print(f"    Gold:      {err['gold'][:80]}{'...' if len(err['gold']) > 80 else ''}")
+        print(
+            f"    EM: {err['exact_match']:.0%}  F1: {err['f1']:.4f} | Ret: {retrievals} | LLM: {llm_calls}"
+        )
+
+
+def print_error_analysis_by_hop(hop_stats: dict, threshold: float = 0.5) -> None:
+    """Print error analysis by hop count and question type."""
+    print("\n" + "=" * 60)
+    print(f"ERROR ANALYSIS BY HOP (F1 < {threshold})")
+    print("=" * 60)
+
+    # Print overall by hop
+    print("\n--- Error Rate by Hop Count ---")
+    print(
+        f"{'Hop':<10} {'Total':>8} {'Errors':>8} {'Error Rate':>12} {'Avg EM':>10} {'Avg F1':>10}"
+    )
+    print("-" * 60)
+
+    for hops in ["2-hop", "3-hop", "4-hop"]:
+        if hops in hop_stats:
+            data = hop_stats[hops]
+            print(
+                f"{hops:<10} {data['total']:>8} {data['errors']:>8} {data['error_rate']:>11.1%} {data.get('avg_em', 0):>9.1%} {data.get('avg_f1', 0):>9.1%}"
+            )
+
+    # Print by question type
+    print("\n--- Error Rate by Question Type ---")
+    for hops in ["2-hop", "3-hop", "4-hop"]:
+        if hops in hop_stats and hop_stats[hops].get("by_type"):
+            print(f"\n{hops}:")
+            for qtype, data in hop_stats[hops]["by_type"].items():
+                print(
+                    f"  {qtype:<15}: {data['total']:>4} questions, {data['errors']:>4} errors ({data['error_rate']:>5.1%}), EM: {data['avg_em']:.1%}, F1: {data['avg_f1']:.1%}"
+                )
 
 
 def print_comparison(rows: list[dict]) -> None:
@@ -536,6 +666,13 @@ def main():
                 print_errors(errors)
             else:
                 print(f"\nNo errors found (all predictions have F1 >= {args.error_threshold})")
+
+            # Also print error analysis by hop
+            hop_stats = analyze_errors_by_hop(
+                results["predictions"],
+                threshold=args.error_threshold,
+            )
+            print_error_analysis_by_hop(hop_stats, threshold=args.error_threshold)
 
 
 if __name__ == "__main__":

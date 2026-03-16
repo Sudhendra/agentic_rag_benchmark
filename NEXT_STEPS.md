@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 16, 2026  
-**Status:** Hop-Stratified Analysis Complete - All Architectures (Vanilla, ReAct, Planner, Self-RAG, Recursive LM, IRCoT, REAP) Full HotpotQA and MuSiQue Results Available with Hop Breakdown; 2WikiMultiHopQA Baseline Complete, Architectures Pending  
+**Status:** Error Analysis Complete - Hop-Stratified Analysis and Error Analysis Available for All Architectures; 2WikiMultiHopQA Baseline Complete, Architectures Pending  
 **Author:** Research Team
 
 ---
@@ -44,6 +44,7 @@
 | RLM Prompts | `prompts/rlm.txt`, `prompts/rlm_combine.txt` | ✅ Complete |
 | RLM Tests | `tests/test_recursive_lm.py` (16 tests) | ✅ Complete |
 | Hop-Stratified Analysis | `scripts/analyze_results.py --hops` | ✅ Complete |
+| Error Analysis | `scripts/analyze_results.py --errors` | ✅ Complete |
 
 ---
 
@@ -92,6 +93,25 @@
 - All architectures degrade significantly from 2-hop to 4-hop
 - 4-hop is the breaking point - max 16.5% EM
 - ReAct RAG excels specifically at 3-hop questions (18.6% vs IRCoT's 16.2%)
+
+### MuSiQue Error Analysis ✅ COMPLETE
+
+| Architecture | 2-Hop Error Rate | 3-Hop Error Rate | 4-Hop Error Rate | Overall Error Rate |
+|--------------|-----------------|-----------------|-----------------|-------------------|
+| **IRCoT** | **73.2%** | **83.8%** | **83.5%** | **78.3%** |
+| ReAct RAG | 76.4% | 81.4% | 90.1% | 80.3% |
+| Recursive LM | 78.7% | 87.6% | 89.6% | 83.3% |
+| Planner RAG | 78.9% | 88.2% | 93.1% | 84.2% |
+| Vanilla RAG | 82.9% | 92.1% | 92.6% | 87.4% |
+| Self-RAG | 84.2% | 93.6% | 91.6% | 88.4% |
+| REAP | **90.0%** | **95.7%** | **97.0%** | **93.0%** |
+
+**Key Error Findings:**
+- IRCoT has lowest error rate across all hop counts
+- REAP fails catastrophically - 90%+ error rate on 2-hop, 95%+ on 3/4-hop
+- Error rate jumps significantly from 2-hop to 3-hop (critical threshold)
+- 4-hop questions are nearly unsolvable - all architectures have >83% error rate
+- REAP common failure modes: returns "Unknown", wrong entity extraction, overlong/garbled responses
 
 ### 2WikiMultiHopQA (12,576 questions)
 

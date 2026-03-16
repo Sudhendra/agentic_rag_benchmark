@@ -266,6 +266,68 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 ---
 
+### Error Analysis (MuSiQue)
+
+#### Error Rate by Hop Count
+
+| Architecture | 2-Hop Error Rate | 3-Hop Error Rate | 4-Hop Error Rate | Overall Error Rate |
+|--------------|-----------------|-----------------|-----------------|-------------------|
+| **IRCoT** | **73.2%** | **83.8%** | **83.5%** | **78.3%** |
+| ReAct RAG | 76.4% | 81.4% | 90.1% | 80.3% |
+| Recursive LM | 78.7% | 87.6% | 89.6% | 83.3% |
+| Planner RAG | 78.9% | 88.2% | 93.1% | 84.2% |
+| Vanilla RAG | 82.9% | 92.1% | 92.6% | 87.4% |
+| Self-RAG | 84.2% | 93.6% | 91.6% | 88.4% |
+| REAP | **90.0%** | **95.7%** | **97.0%** | **93.0%** |
+
+#### Key Error Analysis Findings
+
+1. **IRCoT has lowest error rate** across all hop counts - consistent with its overall best performance
+2. **Error rate increases with hop count** for all architectures
+3. **REAP fails catastrophically** - 90%+ error rate on 2-hop, 95%+ on 3-hop and 4-hop
+4. **3-hop is a critical threshold** - error rates jump significantly from 2-hop to 3-hop
+5. **4-hop questions are nearly unsolvable** - all architectures have >83% error rate
+
+#### Sample Errors by Architecture
+
+**IRCoT (Best) - 2-hop failure examples:**
+- Pred: "None" | Gold: "Miquette Giraudy"
+- Pred: "Carl Laemmle" | Gold: "Mike Medavoy"
+- Pred: "Nuevo Laredo Municipality" | Gold: "Tamaulipas"
+
+**REAP (Worst) - 2-hop failure examples:**
+- Pred: "Unknown" | Gold: "Miquette Giraudy"
+- Pred: "Orion Pictures" | Gold: "Mike Medavoy"
+- Pred: "Nuevo Laredo, Mexico" | Gold: "Tamaulipas"
+
+**REAP failure patterns:**
+- Returns "Unknown" or "Insufficient information" when context exists
+- Extracts wrong entities from context
+- Overlong/garbled responses on complex questions
+
+**Vanilla RAG - 4-hop failure examples:**
+- Pred: "The context does not provide information about the duration..." | Gold: "about 400 years"
+- Common: Gives up early with "no information" rather than chaining reasoning
+
+---
+
+### Generating Error Analysis
+
+To generate error analysis for any run:
+
+```bash
+# Basic error analysis
+python scripts/analyze_results.py --results results/<run_id> --errors
+
+# Error analysis by hop count
+python scripts/analyze_results.py --results results/<run_id> --errors --hops
+
+# Filter by F1 threshold
+python scripts/analyze_results.py --results results/<run_id> --errors --error-threshold 0.3
+```
+
+---
+
 ## Quick Start
 
 ### 1. Setup Environment
