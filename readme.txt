@@ -101,40 +101,6 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 | Bridge | ~2,100 | 21.3% | 34.9% |
 | Compositional | ~300 | 11.7% | 22.4% |
 
-### IRCoT (MuSiQue Full Validation - 2,417 questions)
-
-| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
-|-----------|-------------|----------|--------------|------|---------------|---------------------|
-| **Dense** | **21.7%** | **35.9%** | 6,615 | $1.71 | 4.64 | 4.33 |
-| Hybrid    | 20.8%       | 34.6%    | 8,389        | $1.73 | 4.64 | 4.32 |
-| BM25      | 16.8%       | 28.1%    | 5,824        | $1.68 | 4.61 | 4.28 |
-
-*Model: gpt-4o-mini | max_steps=4 | max_context_tokens=3000*
-
-**By Question Type (Dense Retriever, IRCoT on MuSiQue):**
-
-| Type | Count | Exact Match | F1 |
-|------|-------|-------------|-----|
-| Bridge | ~2,100 | 26.8% | 42.6% |
-| Compositional | ~300 | 16.3% | 28.6% |
-
-### REAP (MuSiQue Full Validation - 2,417 questions)
-
-| Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
-|-----------|-------------|----------|--------------|------|---------------|---------------------|
-| **Hybrid** | **7.0%** | **15.7%** | 4,751 | $2.14 | 6.93 | 2.29 |
-| Dense     | 7.0%       | 15.6%    | 5,230        | $2.17 | 6.91 | 2.27 |
-| BM25      | 4.5%       | 11.6%    | 12,098       | $2.23 | 7.70 | 2.74 |
-
-*Model: gpt-4o-mini | max_iterations=5 | max_active_requirements=2*
-
-**By Question Type (Hybrid Retriever, REAP on MuSiQue):**
-
-| Type | Count | Exact Match | F1 |
-|------|-------|-------------|-----|
-| Bridge | ~2,100 | 10.0% | 20.4% |
-| Compositional | ~300 | 3.9% | 10.6% |
-
 ### ReAct RAG (HotpotQA Full Validation - 7,405 questions)
 
 | Retriever | Exact Match | F1 Score | Latency (ms) | Cost | Avg LLM Calls | Avg Retrieval Calls |
