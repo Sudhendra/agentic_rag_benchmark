@@ -89,6 +89,55 @@ def breakdown_by_question_type(predictions: list[dict]) -> dict[str, dict[str, f
     return result
 
 
+def breakdown_by_hop_count(predictions: list[dict]) -> dict[str, dict[str, float]]:
+    """Compute metrics breakdown by hop count for MuSiQue.
+
+    Extracts hop count from question_id (e.g., '2hop__460946_294723' -> 2 hops).
+
+    Args:
+        predictions: List of prediction records
+
+    Returns:
+        Dictionary mapping hop count to metrics
+    """
+    by_hop: dict[str, dict[str, list]] = defaultdict(
+        lambda: {"em": [], "f1": [], "latency": [], "tokens": []}
+    )
+
+    for pred in predictions:
+        qid = pred.get("question_id", "")
+
+        # Extract hop count from question_id prefix
+        if qid.startswith("2hop"):
+            hops = "2-hop"
+        elif qid.startswith("3hop"):
+            hops = "3-hop"
+        elif qid.startswith("4hop"):
+            hops = "4-hop"
+        elif qid.startswith("5hop"):
+            hops = "5-hop"
+        else:
+            continue  # Skip unknown hop counts
+
+        by_hop[hops]["em"].append(pred.get("exact_match", 0))
+        by_hop[hops]["f1"].append(pred.get("f1", 0))
+        by_hop[hops]["latency"].append(pred.get("latency_ms", 0))
+        by_hop[hops]["tokens"].append(pred.get("tokens_used", 0))
+
+    result = {}
+    for hops, metrics in by_hop.items():
+        count = len(metrics["em"])
+        result[hops] = {
+            "count": count,
+            "avg_em": sum(metrics["em"]) / count if count > 0 else 0,
+            "avg_f1": sum(metrics["f1"]) / count if count > 0 else 0,
+            "avg_latency_ms": sum(metrics["latency"]) / count if count > 0 else 0,
+            "avg_tokens": sum(metrics["tokens"]) / count if count > 0 else 0,
+        }
+
+    return result
+
+
 def extract_errors(
     predictions: list[dict],
     threshold: float = 0.5,
@@ -307,6 +356,34 @@ def print_breakdown(breakdown: dict[str, dict]) -> None:
     print(format_table(rows))
 
 
+def print_hop_breakdown(breakdown: dict[str, dict]) -> None:
+    """Print breakdown by hop count."""
+    print("\n" + "=" * 60)
+    print("BREAKDOWN BY HOP COUNT (MuSiQue)")
+    print("=" * 60 + "\n")
+
+    rows = []
+    # Sort by hop number
+    hop_order = ["2-hop", "3-hop", "4-hop", "5-hop"]
+    for hop in hop_order:
+        if hop in breakdown:
+            metrics = breakdown[hop]
+            rows.append(
+                {
+                    "hops": hop,
+                    "count": metrics["count"],
+                    "exact_match": metrics["avg_em"],
+                    "f1": metrics["avg_f1"],
+                    "latency_ms": metrics["avg_latency_ms"],
+                }
+            )
+
+    if rows:
+        print(format_table(rows))
+    else:
+        print("No hop count data found (dataset may not be MuSiQue)")
+
+
 def print_errors(errors: list[dict]) -> None:
     """Print error analysis."""
     print("\n" + "=" * 60)
@@ -377,6 +454,11 @@ def main():
         help="Show breakdown by question type",
     )
     parser.add_argument(
+        "--hops",
+        action="store_true",
+        help="Show breakdown by hop count (for MuSiQue)",
+    )
+    parser.add_argument(
         "--errors",
         action="store_true",
         help="Show error analysis",
@@ -439,6 +521,10 @@ def main():
         if args.breakdown and results["predictions"]:
             breakdown = breakdown_by_question_type(results["predictions"])
             print_breakdown(breakdown)
+
+        if args.hops and results["predictions"]:
+            hop_breakdown = breakdown_by_hop_count(results["predictions"])
+            print_hop_breakdown(hop_breakdown)
 
         if args.errors and results["predictions"]:
             errors = extract_errors(

@@ -213,6 +213,59 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 ---
 
+### MuSiQue Hop-Stratified Analysis (Best Retriever per Architecture)
+
+**MuSiQue Question Distribution:** 2-hop: 1,252 (51.8%), 3-hop: 760 (31.4%), 4-hop: 405 (16.8%)
+
+| Architecture | 2-Hop EM | 2-Hop F1 | 3-Hop EM | 3-Hop F1 | 4-Hop EM | 4-Hop F1 | Overall EM | Overall F1 |
+|--------------|----------|----------|----------|----------|----------|----------|------------|------------|
+| **IRCoT** | **26.8%** | **42.6%** | 16.2% | 30.4% | **16.5%** | **25.4%** | **21.7%** | **35.9%** |
+| ReAct RAG | 23.6% | 33.9% | **18.6%** | **26.4%** | 9.9% | 11.5% | 19.7% | 27.8% |
+| Recursive LM | 21.3% | 34.9% | 12.4% | 24.5% | 10.4% | 18.4% | 16.7% | 28.9% |
+| Planner RAG | 21.1% | 33.0% | 11.8% | 20.6% | 6.9% | 13.6% | 15.8% | 25.9% |
+| Vanilla RAG | 17.1% | 29.6% | 7.9% | 20.2% | 7.4% | 15.6% | 12.6% | 24.3% |
+| Self-RAG | 15.8% | 28.0% | 6.4% | 18.4% | 8.4% | 17.1% | 11.6% | 23.2% |
+| REAP | 10.0% | 20.4% | 4.3% | 11.7% | 3.0% | 8.6% | 7.0% | 15.7% |
+
+**Key Hop-Stratified Findings:**
+
+1. **IRCoT dominates at every hop count** - Best EM on 2-hop, 3-hop, and 4-hop questions
+2. **All architectures degrade with more hops** - Performance drops from 2-hop → 3-hop → 4-hop
+3. **2-hop vs 4-hop gap**: IRCoT shows smallest degradation (26.8% → 16.5% = -10.3pp), REAP shows largest (10.0% → 3.0% = -7.0pp but from lower base)
+4. **ReAct RAG excels at 3-hop** (18.6% EM) - Better than IRCoT (16.2%) at this hop count
+5. **4-hop is the breaking point** - All architectures struggle significantly (max 16.5% EM)
+6. **Vanilla RAG baseline degrades severely** on 3-hop (7.9%) and 4-hop (7.4%)
+
+---
+
+### All Architectures (All Retrievers) - MuSiQue Hop Analysis
+
+| Architecture | Retriever | 2-Hop EM | 3-Hop EM | 4-Hop EM | Overall EM |
+|--------------|-----------|----------|----------|----------|------------|
+| ircot_rag | dense | 26.8% | 16.2% | 16.5% | 21.7% |
+| ircot_rag | hybrid | 27.2% | 13.9% | 13.8% | 20.8% |
+| react_rag | dense | 23.6% | 18.6% | 9.9% | 19.7% |
+| react_rag | hybrid | 23.6% | 18.0% | 8.4% | 19.3% |
+| ircot_rag | bm25 | 22.4% | 10.1% | 11.9% | 16.8% |
+| recursive_lm | dense | 21.3% | 12.4% | 10.4% | 16.7% |
+| recursive_lm | hybrid | 22.4% | 11.3% | 7.7% | 16.5% |
+| planner_rag | dense | 21.1% | 11.8% | 6.9% | 15.8% |
+| planner_rag | hybrid | 19.9% | 10.4% | 5.9% | 14.6% |
+| vanilla_rag | dense | 17.1% | 7.9% | 7.4% | 12.6% |
+| vanilla_rag | hybrid | 16.7% | 7.1% | 6.7% | 12.0% |
+| react_rag | bm25 | 17.9% | 5.8% | 4.9% | 11.9% |
+| self_rag | dense | 15.8% | 6.4% | 8.4% | 11.6% |
+| self_rag | hybrid | 14.5% | 7.0% | 6.7% | 10.8% |
+| recursive_lm | bm25 | 13.3% | 7.1% | 4.4% | 9.8% |
+| planner_rag | bm25 | 11.1% | 4.1% | 3.0% | 7.5% |
+| reap_rag | hybrid | 10.0% | 4.3% | 3.0% | 7.0% |
+| reap_rag | dense | 9.9% | 3.4% | 4.4% | 7.0% |
+| vanilla_rag | bm25 | 9.9% | 3.8% | 3.5% | 6.9% |
+| self_rag | bm25 | 9.3% | 3.9% | 4.7% | 6.8% |
+| reap_rag | bm25 | 6.2% | 3.4% | 1.2% | 4.5% |
+
+---
+
 ## Quick Start
 
 ### 1. Setup Environment

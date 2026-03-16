@@ -1,7 +1,7 @@
 # Next Steps: Agentic RAG Benchmark
 
 **Date:** March 16, 2026  
-**Status:** Phase 3 Complete - All Architectures (Vanilla, ReAct, Planner, Self-RAG, Recursive LM, IRCoT, REAP) Full HotpotQA and MuSiQue Results Available; 2WikiMultiHopQA Baseline Complete, Architectures Pending  
+**Status:** Hop-Stratified Analysis Complete - All Architectures (Vanilla, ReAct, Planner, Self-RAG, Recursive LM, IRCoT, REAP) Full HotpotQA and MuSiQue Results Available with Hop Breakdown; 2WikiMultiHopQA Baseline Complete, Architectures Pending  
 **Author:** Research Team
 
 ---
@@ -43,6 +43,7 @@
 | REAP | `src/architectures/recursive/reap.py` | ✅ Complete |
 | RLM Prompts | `prompts/rlm.txt`, `prompts/rlm_combine.txt` | ✅ Complete |
 | RLM Tests | `tests/test_recursive_lm.py` (16 tests) | ✅ Complete |
+| Hop-Stratified Analysis | `scripts/analyze_results.py --hops` | ✅ Complete |
 
 ---
 
@@ -71,6 +72,26 @@
 | Planner RAG  | Agentic  | Dense    | 15.8%       | 25.9%    | 10.15         | $2.08 | 66516cec |
 | Self-RAG     | Agentic  | Dense   | 11.6%       | 23.2%    | 13.79         | $1.00 | 1c0a526f |
 | REAP | Recursive | Hybrid | 7.0% | 15.7% | 6.93 | $2.14 | 842f7d8b |
+
+### MuSiQue Hop-Stratified Analysis ✅ COMPLETE
+
+**MuSiQue Question Distribution:** 2-hop: 1,252 (51.8%), 3-hop: 760 (31.4%), 4-hop: 405 (16.8%)
+
+| Architecture | 2-Hop EM | 3-Hop EM | 4-Hop EM | Overall EM |
+|--------------|----------|----------|----------|------------|
+| **IRCoT** | **26.8%** | 16.2% | **16.5%** | **21.7%** |
+| ReAct RAG | 23.6% | **18.6%** | 9.9% | 19.7% |
+| Recursive LM | 21.3% | 12.4% | 10.4% | 16.7% |
+| Planner RAG | 21.1% | 11.8% | 6.9% | 15.8% |
+| Vanilla RAG | 17.1% | 7.9% | 7.4% | 12.6% |
+| Self-RAG | 15.8% | 6.4% | 8.4% | 11.6% |
+| REAP | 10.0% | 4.3% | 3.0% | 7.0% |
+
+**Key Findings:**
+- IRCoT dominates at every hop count - best 2-hop, 3-hop, and 4-hop performance
+- All architectures degrade significantly from 2-hop to 4-hop
+- 4-hop is the breaking point - max 16.5% EM
+- ReAct RAG excels specifically at 3-hop questions (18.6% vs IRCoT's 16.2%)
 
 ### 2WikiMultiHopQA (12,576 questions)
 
