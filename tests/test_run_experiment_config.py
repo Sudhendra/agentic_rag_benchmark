@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 
-
 from src.core.types import ArchitectureType, BenchmarkResult, Document, Question, QuestionType
 
 
