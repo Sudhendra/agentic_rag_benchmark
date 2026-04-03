@@ -1,5 +1,6 @@
 """Abstract base class for retriever implementations."""
 
+import hashlib
 from abc import ABC, abstractmethod
 
 from .types import Document, RetrievalResult
@@ -16,6 +17,7 @@ class BaseRetriever(ABC):
         self.is_indexed = False
         self.corpus_size = 0
         self._corpus: list[Document] | None = None
+        self._indexed_corpus_signature: str | None = None
 
     @abstractmethod
     async def retrieve(
@@ -83,6 +85,21 @@ class BaseRetriever(ABC):
         """
         if not self.is_indexed:
             return True
-        if self._corpus is not corpus and len(corpus) != self.corpus_size:
+        if self._corpus is None:
+            return True
+        if len(corpus) != self.corpus_size:
+            return True
+        current_signature = self._get_corpus_signature(corpus)
+        if self._indexed_corpus_signature != current_signature:
             return True
         return False
+
+    @staticmethod
+    def _get_corpus_signature(corpus: list[Document]) -> str:
+        """Build a deterministic signature for corpus invalidation."""
+        corpus_hash = hashlib.sha256()
+        for doc in corpus:
+            corpus_hash.update(doc.id.encode())
+            corpus_hash.update(doc.title.encode())
+            corpus_hash.update(doc.text.encode())
+        return corpus_hash.hexdigest()

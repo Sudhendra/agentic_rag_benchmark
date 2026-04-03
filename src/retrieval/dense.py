@@ -33,13 +33,14 @@ def _get_cache_key(corpus: list[Document], model: str) -> str:
     corpus_hash = hashlib.sha256()
     for doc in corpus:
         corpus_hash.update(doc.id.encode())
-        corpus_hash.update(doc.text[:1000].encode())
+        corpus_hash.update(doc.title.encode())
+        corpus_hash.update(doc.text.encode())
 
     key_data = f"{model}_{len(corpus)}_{corpus_hash.hexdigest()[:16]}"
     return hashlib.sha256(key_data.encode()).hexdigest()
 
 
-def _load_cached_embeddings(cache_path: Path) -> tuple[np.ndarray, list[str]] | None:
+def _load_cached_embeddings(cache_path: Path) -> tuple[np.ndarray, list[str], bool] | None:
     """Load cached embeddings if available and valid."""
     if not cache_path.exists():
         return None
@@ -48,14 +49,27 @@ def _load_cached_embeddings(cache_path: Path) -> tuple[np.ndarray, list[str]] | 
         data = np.load(cache_path, allow_pickle=True)
         embeddings = data["embeddings"]
         doc_ids = data["doc_ids"].tolist()
-        return embeddings, doc_ids
+        normalized = bool(data["normalized"][0]) if "normalized" in data else False
+        return embeddings, doc_ids, normalized
     except Exception:
         return None
 
 
+def _normalize_embeddings(embeddings: np.ndarray) -> np.ndarray:
+    """Normalize embeddings for cosine similarity."""
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    norms = np.where(norms == 0, 1.0, norms)
+    return embeddings / norms
+
+
 def _save_embeddings(cache_path: Path, embeddings: np.ndarray, doc_ids: list[str]) -> None:
     """Save embeddings to cache."""
-    np.savez(cache_path, embeddings=embeddings, doc_ids=np.array(doc_ids))
+    np.savez(
+        cache_path,
+        embeddings=embeddings,
+        doc_ids=np.array(doc_ids),
+        normalized=np.array([True]),
+    )
 
 
 class DenseRetriever(BaseRetriever):
@@ -134,6 +148,7 @@ class DenseRetriever(BaseRetriever):
         """
         self._corpus = corpus
         self.corpus_size = len(corpus)
+        self._indexed_corpus_signature = self._get_corpus_signature(corpus)
 
         # Get document texts
         texts = [doc.text for doc in corpus]
@@ -148,9 +163,9 @@ class DenseRetriever(BaseRetriever):
         cached = _load_cached_embeddings(cache_path)
 
         if cached is not None:
-            cached_embeddings, cached_doc_ids = cached
+            cached_embeddings, cached_doc_ids, is_normalized = cached
             # Verify cache is for the same corpus
-            if len(cached_embeddings) == len(texts) and cached_doc_ids == doc_ids:
+            if len(cached_embeddings) == len(texts) and cached_doc_ids == doc_ids and is_normalized:
                 print(f"DenseRetriever: Loaded {len(cached_embeddings)} embeddings from cache!")
                 self.embeddings = cached_embeddings
                 self.is_indexed = True
@@ -161,7 +176,7 @@ class DenseRetriever(BaseRetriever):
         # Compute embeddings
         print(f"DenseRetriever: Computing embeddings for {len(texts)} documents...")
         start_time = time.time()
-        self.embeddings = await self._embed_texts(texts)
+        self.embeddings = _normalize_embeddings(await self._embed_texts(texts))
         elapsed = time.time() - start_time
         print(f"DenseRetriever: Computed embeddings in {elapsed:.1f}s")
 
@@ -169,10 +184,6 @@ class DenseRetriever(BaseRetriever):
         print("DenseRetriever: Saving embeddings to cache...")
         _save_embeddings(cache_path, self.embeddings, doc_ids)
         print("DenseRetriever: Cached embeddings saved!")
-
-        # Normalize for cosine similarity
-        norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True)
-        self.embeddings = self.embeddings / norms
 
         self.is_indexed = True
 
@@ -209,7 +220,11 @@ class DenseRetriever(BaseRetriever):
         scores = np.dot(self.embeddings, query_embedding)
 
         # Get top-k indices
-        top_indices = scores.argsort()[-top_k:][::-1]
+        ranked_indices = sorted(
+            range(len(scores)),
+            key=lambda index: (-float(scores[index]), self._corpus[index].id),
+        )
+        top_indices = ranked_indices[:top_k]
 
         # Build results
         result_docs = [self._corpus[i] for i in top_indices]

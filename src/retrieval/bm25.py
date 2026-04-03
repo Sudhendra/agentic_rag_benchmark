@@ -35,6 +35,7 @@ class BM25Retriever(BaseRetriever):
         """
         self._corpus = corpus
         self.corpus_size = len(corpus)
+        self._indexed_corpus_signature = self._get_corpus_signature(corpus)
 
         # Tokenize all documents
         tokenized_corpus = [self.tokenizer(doc.text) for doc in corpus]

@@ -46,6 +46,7 @@ class HybridRetriever(BaseRetriever):
         """
         self._corpus = corpus
         self.corpus_size = len(corpus)
+        self._indexed_corpus_signature = self._get_corpus_signature(corpus)
 
         # Index both retrievers
         await self.bm25.index(corpus)
