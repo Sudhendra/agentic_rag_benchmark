@@ -133,6 +133,18 @@ class TestOpenAIClientCaching:
 
                 assert key1 != key2
 
+    def test_cache_key_different_for_different_seeds(self):
+        """Test that different seeds produce different keys."""
+        with patch("src.core.llm_client.openai.AsyncOpenAI"):
+            with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
+                client = OpenAIClient(model="gpt-4o-mini")
+
+                messages = [{"role": "user", "content": "test"}]
+                key1 = client._make_cache_key(messages, 0.0, 1024, seed=1)
+                key2 = client._make_cache_key(messages, 0.0, 1024, seed=2)
+
+                assert key1 != key2
+
 
 class TestOpenAIClientGenerate:
     """Tests for OpenAI client generate method."""
@@ -200,6 +212,26 @@ class TestOpenAIClientGenerate:
                 assert client.total_input_tokens == 100
                 assert client.total_output_tokens == 50
                 assert client.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_generate_forwards_seed_to_openai(self):
+        """Test that generate forwards seed when provided."""
+        with patch("src.core.llm_client.openai.AsyncOpenAI") as mock_openai:
+            with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
+                mock_response = MagicMock()
+                mock_response.choices = [MagicMock(message=MagicMock(content="response"))]
+                mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=5)
+
+                mock_client = AsyncMock()
+                mock_client.chat.completions.create.return_value = mock_response
+                mock_openai.return_value = mock_client
+
+                client = OpenAIClient(model="gpt-4o-mini", track_costs=True)
+
+                await client.generate([{"role": "user", "content": "test"}], seed=42)
+
+                mock_client.chat.completions.create.assert_called_once()
+                assert mock_client.chat.completions.create.call_args.kwargs["seed"] == 42
 
 
 class TestCreateLLMClient:

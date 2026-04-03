@@ -85,7 +85,7 @@ class ReActRAG(BaseRAG):
             )
 
             messages = [{"role": "user", "content": prompt}]
-            response_text, tokens_used, cost = await self.llm.generate(
+            response_text, tokens_used, cost = await self._generate(
                 messages,
                 stop=["Observation:"],
             )

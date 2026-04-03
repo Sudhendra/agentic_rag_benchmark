@@ -1,5 +1,6 @@
 """Abstract base class for RAG architectures."""
 
+import inspect
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -136,3 +137,35 @@ class BaseRAG(ABC):
                 context = context[:max_chars] + "..."
 
         return context
+
+    async def _generate(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        stop: list[str] | None = None,
+    ) -> tuple[str, int, float]:
+        """Call the LLM with generation settings resolved from config."""
+        kwargs: dict[str, Any] = {
+            "temperature": self.config.get("generation_temperature", 0.0),
+            "max_tokens": self.config.get("generation_max_tokens", 1024),
+        }
+        if stop is not None:
+            kwargs["stop"] = stop
+
+        seed = self.config.get("generation_seed")
+        if seed is not None and self._llm_generate_supports_seed():
+            kwargs["seed"] = seed
+
+        return await self.llm.generate(messages, **kwargs)
+
+    def _llm_generate_supports_seed(self) -> bool:
+        """Check whether the configured LLM client accepts a seed kwarg."""
+        try:
+            parameters = inspect.signature(self.llm.generate).parameters.values()
+        except (TypeError, ValueError):
+            return False
+
+        return any(
+            parameter.name == "seed" or parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )

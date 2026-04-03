@@ -336,7 +336,7 @@ class SelfRAG(BaseRAG):
         """
         prompt = self.retrieval_decision_prompt.format(question=question.text)
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
 
         normalized = response_text.strip().lower()
         token_match = re.search(r"\[retrieval\]\s*(yes|no|continue)", normalized)
@@ -362,7 +362,7 @@ class SelfRAG(BaseRAG):
             f"Answer:"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         return response_text.strip(), tokens, cost
 
     async def _assess_relevance(
@@ -380,7 +380,7 @@ class SelfRAG(BaseRAG):
             f"Answer with exactly: [IsRel] relevant or [IsRel] irrelevant"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         relevance = self._parse_relevance(response_text)
         return relevance, tokens, cost
 
@@ -400,7 +400,7 @@ class SelfRAG(BaseRAG):
             f"Answer:"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         return response_text.strip(), tokens, cost
 
     async def _critique_support(
@@ -422,7 +422,7 @@ class SelfRAG(BaseRAG):
             f"[IsSup] no support"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         support = self._parse_support(response_text)
         return support, tokens, cost
 
@@ -440,7 +440,7 @@ class SelfRAG(BaseRAG):
             f"Respond with exactly: [IsUse] 1-5"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
 
         utility = self._parse_utility(response_text)
         return utility, tokens, cost

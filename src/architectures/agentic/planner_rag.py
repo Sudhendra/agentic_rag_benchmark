@@ -646,7 +646,7 @@ class PlannerRAG(BaseRAG):
             f"Question: {question.text}"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
 
         normalized = response_text.strip()
         parsed = self._try_parse_json(normalized)
@@ -668,7 +668,7 @@ class PlannerRAG(BaseRAG):
             "Answer:"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         return response_text.strip(), tokens, cost
 
     async def _plan_action(
@@ -692,7 +692,7 @@ class PlannerRAG(BaseRAG):
             max_branching_factor=self.config["max_branching_factor"],
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
 
         action_payload = self._parse_action_response(
             response_text=response_text,
@@ -762,7 +762,7 @@ class PlannerRAG(BaseRAG):
                 "\n\nFor this comparison root node, set JSON answer to exactly yes or no."
             )
         solve_messages = [{"role": "user", "content": solve_prompt}]
-        answer_text, solve_tokens, solve_cost = await self.llm.generate(solve_messages)
+        answer_text, solve_tokens, solve_cost = await self._generate(solve_messages)
         node_answer = answer_text.strip()
         confidence = 0.5
         conf_tokens = 0
@@ -793,7 +793,7 @@ class PlannerRAG(BaseRAG):
                 "Confidence:"
             )
             confidence_messages = [{"role": "user", "content": confidence_prompt}]
-            confidence_text, conf_tokens, conf_cost = await self.llm.generate(confidence_messages)
+            confidence_text, conf_tokens, conf_cost = await self._generate(confidence_messages)
             confidence = self._parse_confidence(confidence_text)
             solve_llm_calls = 2
 
@@ -848,7 +848,7 @@ class PlannerRAG(BaseRAG):
             f"Current depth: {node.depth}\n"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
 
         candidates = self._parse_sub_questions(response_text)
         candidates = self._prune_similar_sub_questions(
@@ -920,7 +920,7 @@ class PlannerRAG(BaseRAG):
             )
 
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         return response_text.strip(), tokens, cost
 
     async def _refine_bridge_answer(
@@ -951,7 +951,7 @@ class PlannerRAG(BaseRAG):
             node_summaries=node_summaries,
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens, cost = await self.llm.generate(messages)
+        response_text, tokens, cost = await self._generate(messages)
         return response_text.strip(), tokens, cost, response_text.strip()
 
     def _recover_unknown_answer(

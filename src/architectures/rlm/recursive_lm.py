@@ -229,7 +229,7 @@ class RecursiveLM(BaseRAG):
         )
 
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens_used, cost = await self.llm.generate(messages)
+        response_text, tokens_used, cost = await self._generate(messages)
         state.num_llm_calls += 1
         state.total_tokens += tokens_used
         state.total_cost += cost
@@ -314,7 +314,7 @@ class RecursiveLM(BaseRAG):
             "Answer:"
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens_used, cost = await self.llm.generate(messages)
+        response_text, tokens_used, cost = await self._generate(messages)
         state.num_llm_calls += 1
         state.total_tokens += tokens_used
         state.total_cost += cost
@@ -336,7 +336,7 @@ class RecursiveLM(BaseRAG):
             combine_instruction=combine_instruction,
         )
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens_used, cost = await self.llm.generate(messages)
+        response_text, tokens_used, cost = await self._generate(messages)
         state.num_llm_calls += 1
         state.total_tokens += tokens_used
         state.total_cost += cost

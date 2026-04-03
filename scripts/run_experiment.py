@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import random
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -33,6 +36,28 @@ def _apply_overrides(config: dict[str, Any], subset_size: int | None) -> dict[st
     return config
 
 
+def _apply_seed(config: dict[str, Any]) -> int | None:
+    seed = config.get("experiment", {}).get("seed")
+    if seed is None:
+        return None
+
+    random.seed(seed)
+
+    try:
+        import numpy as np
+
+        np.random.seed(seed)
+    except Exception:
+        pass
+
+    return seed
+
+
+def _build_fallback_run_id() -> str:
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+    return f"manual-{timestamp}-{uuid4().hex[:8]}"
+
+
 def _build_rag(config: dict[str, Any]):
     cache = None
     if config.get("cache", {}).get("enabled", False):
@@ -57,26 +82,25 @@ def _build_rag(config: dict[str, Any]):
     architecture_name = config.get("architecture", {}).get("name", "vanilla_rag")
     common_config = {
         "top_k": retrieval_config.get("top_k", 5),
-    }
-    common_with_context = {
-        **common_config,
-        "max_context_tokens": llm_config.get("max_tokens", 1024),
+        "generation_temperature": llm_config.get("temperature", 0.0),
+        "generation_max_tokens": llm_config.get("max_tokens", 1024),
+        "generation_seed": config.get("experiment", {}).get("seed"),
     }
 
     if architecture_name == "vanilla_rag":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             "prompt_path": config.get("prompt_path", "prompts/vanilla.txt"),
             **config.get("vanilla", {}),
         }
     elif architecture_name == "react_rag":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             **config.get("react", {}),
         }
     elif architecture_name == "self_rag":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             **config.get("self_rag", {}),
         }
     elif architecture_name == "planner_rag":
@@ -86,21 +110,21 @@ def _build_rag(config: dict[str, Any]):
         }
     elif architecture_name == "ircot_rag":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             **config.get("ircot", {}),
         }
     elif architecture_name == "reap_rag":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             **config.get("reap", {}),
         }
     elif architecture_name == "recursive_lm":
         architecture_config = {
-            **common_with_context,
+            **common_config,
             **config.get("rlm", {}),
         }
     else:
-        architecture_config = {**common_with_context, **config.get(architecture_name, {})}
+        architecture_config = {**common_config, **config.get(architecture_name, {})}
 
     return create_architecture(architecture_name, llm, retriever, architecture_config)
 
@@ -111,6 +135,8 @@ async def run_experiment(config: dict[str, Any]) -> Path:
         level=logging_config.get("level", "INFO"),
         log_file=logging_config.get("file"),
     )
+
+    _apply_seed(config)
 
     rag = _build_rag(config)
 
@@ -175,9 +201,9 @@ async def run_experiment(config: dict[str, Any]) -> Path:
                 }
             )
     except Exception:
-        run_id = run_id or "manual"
+        run_id = run_id or _build_fallback_run_id()
 
-    run_dir = output_root / (run_id or "manual")
+    run_dir = output_root / (run_id or _build_fallback_run_id())
     save_results(benchmark_result, run_dir, resolved_config=config)
 
     try:

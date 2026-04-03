@@ -104,7 +104,7 @@ class VanillaRAG(BaseRAG):
         )
 
         messages = [{"role": "user", "content": prompt}]
-        response_text, tokens_used, cost = await self.llm.generate(messages)
+        response_text, tokens_used, cost = await self._generate(messages)
 
         # Clean up answer
         answer = response_text.strip()

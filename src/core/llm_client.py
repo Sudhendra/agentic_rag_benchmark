@@ -52,6 +52,7 @@ class BaseLLMClient(ABC):
         temperature: float = 0.0,
         max_tokens: int = 1024,
         stop: list[str] | None = None,
+        seed: int | None = None,
     ) -> tuple[str, int, float]:
         """Generate a response from the LLM.
 
@@ -72,6 +73,7 @@ class BaseLLMClient(ABC):
         temperature: float,
         max_tokens: int,
         stop: list[str] | None = None,
+        seed: int | None = None,
     ) -> str:
         """Create a deterministic cache key for a request."""
         data = {
@@ -80,6 +82,7 @@ class BaseLLMClient(ABC):
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stop": stop,
+            "seed": seed,
         }
         return SQLiteCache.make_key(data)
 
@@ -171,6 +174,7 @@ class OpenAIClient(BaseLLMClient):
         temperature: float = 0.0,
         max_tokens: int = 1024,
         stop: list[str] | None = None,
+        seed: int | None = None,
     ) -> tuple[str, int, float]:
         """Generate a response from OpenAI.
 
@@ -184,7 +188,7 @@ class OpenAIClient(BaseLLMClient):
             Tuple of (response_text, tokens_used, cost_usd)
         """
         # Check cache first
-        cache_key = self._make_cache_key(messages, temperature, max_tokens, stop)
+        cache_key = self._make_cache_key(messages, temperature, max_tokens, stop, seed)
         if self.cache:
             cached = self.cache.get(cache_key)
             if cached:
@@ -199,6 +203,8 @@ class OpenAIClient(BaseLLMClient):
         }
         if stop:
             kwargs["stop"] = stop
+        if seed is not None:
+            kwargs["seed"] = seed
 
         response = await self.client.chat.completions.create(**kwargs)
 

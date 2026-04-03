@@ -156,7 +156,7 @@ class REAPRAG(BaseRAG):
         num_retrieval_calls = 0
         step_id = 0
 
-        decomposition_text, tokens_used, cost = await self.llm.generate(
+        decomposition_text, tokens_used, cost = await self._generate(
             [{"role": "user", "content": self._build_decompose_prompt(question.text)}]
         )
         num_llm_calls += 1
@@ -197,7 +197,7 @@ class REAPRAG(BaseRAG):
             planner_prompt = self._build_plan_prompt(
                 question.text, user_goal, plan, facts, should_replan
             )
-            planner_text, tokens_used, cost = await self.llm.generate(
+            planner_text, tokens_used, cost = await self._generate(
                 [{"role": "user", "content": planner_prompt}]
             )
             num_llm_calls += 1
@@ -256,7 +256,7 @@ class REAPRAG(BaseRAG):
                     facts,
                     retrieval_result.documents[: self.config["max_docs"]],
                 )
-                extract_text, tokens_used, cost = await self.llm.generate(
+                extract_text, tokens_used, cost = await self._generate(
                     [{"role": "user", "content": extract_prompt}]
                 )
                 num_llm_calls += 1
@@ -301,7 +301,7 @@ class REAPRAG(BaseRAG):
             if self._can_synthesize(plan, facts):
                 break
 
-        synthesis_text, tokens_used, cost = await self.llm.generate(
+        synthesis_text, tokens_used, cost = await self._generate(
             [{"role": "user", "content": self._build_synthesize_prompt(question.text, plan, facts)}]
         )
         num_llm_calls += 1

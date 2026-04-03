@@ -107,7 +107,7 @@ class IRCoTRAG(BaseRAG):
         for _ in range(self.config["max_steps"]):
             prompt = self._build_reason_prompt(question.text, evidence_docs, reasoning_sentences)
             messages = [{"role": "user", "content": prompt}]
-            response_text, tokens_used, cost = await self.llm.generate(messages)
+            response_text, tokens_used, cost = await self._generate(messages)
             num_llm_calls += 1
             total_tokens += tokens_used
             total_cost += cost
@@ -165,7 +165,7 @@ class IRCoTRAG(BaseRAG):
             final_cost = 0.0
         else:
             final_messages = [{"role": "user", "content": final_prompt}]
-            final_answer, final_tokens, final_cost = await self.llm.generate(final_messages)
+            final_answer, final_tokens, final_cost = await self._generate(final_messages)
             num_llm_calls += 1
             total_tokens += final_tokens
             total_cost += final_cost
