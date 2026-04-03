@@ -35,6 +35,7 @@ class Question:
     gold_answer: str | None = None
     supporting_facts: list[tuple[str, int]] | None = None  # (title, sent_idx)
     decomposition: list[str] | None = None  # Sub-questions if available
+    candidate_corpus: list["Document"] | None = None
     metadata: dict = field(default_factory=dict)
 
 

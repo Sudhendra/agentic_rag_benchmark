@@ -136,8 +136,6 @@ async def run_experiment(config: dict[str, Any]) -> Path:
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
-    await rag.retriever.index(corpus)
-
     evaluator = Evaluator(
         rag,
         max_concurrency=config.get("evaluation", {}).get("max_concurrency", 5),

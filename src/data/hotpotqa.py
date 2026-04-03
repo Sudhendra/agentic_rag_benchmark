@@ -90,6 +90,29 @@ class HotpotQALoader:
         corpus_dict: dict[str, Document] = {}
 
         for item in dataset:
+            question_corpus: list[Document] = []
+
+            # Parse context to build corpus
+            context = item.get("context", {})
+            if isinstance(context, dict):
+                titles = context.get("title", [])
+                sentences_list = context.get("sentences", [])
+
+                for title, sentences in zip(titles, sentences_list):
+                    doc_id = f"{item['id']}_{title}"
+
+                    if doc_id not in corpus_dict:
+                        text = " ".join(sentences) if isinstance(sentences, list) else sentences
+
+                        corpus_dict[doc_id] = Document(
+                            id=doc_id,
+                            title=title,
+                            text=text,
+                            sentences=sentences if isinstance(sentences, list) else [sentences],
+                        )
+
+                    question_corpus.append(corpus_dict[doc_id])
+
             # Parse supporting facts
             supporting_facts = None
             if "supporting_facts" in item and item["supporting_facts"]:
@@ -104,31 +127,12 @@ class HotpotQALoader:
                 type=self._parse_question_type(item.get("type", "bridge")),
                 gold_answer=item["answer"],
                 supporting_facts=supporting_facts,
+                candidate_corpus=question_corpus or None,
                 metadata={
                     "level": item.get("level", ""),
                 },
             )
             questions.append(q)
-
-            # Parse context to build corpus
-            context = item.get("context", {})
-            if isinstance(context, dict):
-                titles = context.get("title", [])
-                sentences_list = context.get("sentences", [])
-
-                for title, sentences in zip(titles, sentences_list):
-                    doc_id = f"{item['id']}_{title}"
-
-                    if doc_id not in corpus_dict:
-                        # Join sentences to form document text
-                        text = " ".join(sentences) if isinstance(sentences, list) else sentences
-
-                        corpus_dict[doc_id] = Document(
-                            id=doc_id,
-                            title=title,
-                            text=text,
-                            sentences=sentences if isinstance(sentences, list) else [sentences],
-                        )
 
         return questions, list(corpus_dict.values())
 

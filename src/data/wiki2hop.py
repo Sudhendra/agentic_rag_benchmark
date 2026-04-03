@@ -87,24 +87,7 @@ class Wiki2HopLoader:
 
         for item in dataset:
             q_id = item["id"]
-
-            supporting_facts = None
-            if "supporting_facts" in item and item["supporting_facts"]:
-                sf = item["supporting_facts"]
-                if isinstance(sf, dict) and "title" in sf and "sent_id" in sf:
-                    supporting_facts = list(zip(sf["title"], sf["sent_id"]))
-
-            q = Question(
-                id=q_id,
-                text=item["question"],
-                type=self._parse_question_type(item.get("type", "bridging")),
-                gold_answer=item["answer"],
-                supporting_facts=supporting_facts,
-                metadata={
-                    "evidences": item.get("evidences", []),
-                },
-            )
-            questions.append(q)
+            question_corpus: list[Document] = []
 
             context = item.get("context", {})
             if isinstance(context, dict):
@@ -123,6 +106,27 @@ class Wiki2HopLoader:
                             text=text,
                             sentences=sentences if isinstance(sentences, list) else [sentences],
                         )
+
+                    question_corpus.append(corpus_dict[doc_id])
+
+            supporting_facts = None
+            if "supporting_facts" in item and item["supporting_facts"]:
+                sf = item["supporting_facts"]
+                if isinstance(sf, dict) and "title" in sf and "sent_id" in sf:
+                    supporting_facts = list(zip(sf["title"], sf["sent_id"]))
+
+            q = Question(
+                id=q_id,
+                text=item["question"],
+                type=self._parse_question_type(item.get("type", "bridging")),
+                gold_answer=item["answer"],
+                supporting_facts=supporting_facts,
+                candidate_corpus=question_corpus or None,
+                metadata={
+                    "evidences": item.get("evidences", []),
+                },
+            )
+            questions.append(q)
 
         return questions, list(corpus_dict.values())
 

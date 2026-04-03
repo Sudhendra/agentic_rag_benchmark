@@ -84,28 +84,7 @@ class MuSiQueLoader:
 
         for item in dataset:
             q_id = item["id"]
-
-            question_decomposition = item.get("question_decomposition", [])
-            supporting_facts = None
-            if "paragraphs" in item:
-                paragraphs = item["paragraphs"]
-                supporting_facts = []
-                for para in paragraphs:
-                    if para.get("is_supporting", False):
-                        supporting_facts.append((para.get("title", ""), para.get("idx", 0)))
-
-            q = Question(
-                id=q_id,
-                text=item["question"],
-                type=self._parse_question_type(question_decomposition),
-                gold_answer=item["answer"],
-                supporting_facts=supporting_facts if supporting_facts else None,
-                metadata={
-                    "question_decomposition": question_decomposition,
-                    "answer_aliases": item.get("answer_aliases", []),
-                },
-            )
-            questions.append(q)
+            question_corpus: list[Document] = []
 
             if "paragraphs" in item:
                 paragraphs = item["paragraphs"]
@@ -127,6 +106,31 @@ class MuSiQueLoader:
                             text=para_text,
                             sentences=sentences,
                         )
+
+                    question_corpus.append(corpus_dict[doc_id])
+
+            question_decomposition = item.get("question_decomposition", [])
+            supporting_facts = None
+            if "paragraphs" in item:
+                paragraphs = item["paragraphs"]
+                supporting_facts = []
+                for para in paragraphs:
+                    if para.get("is_supporting", False):
+                        supporting_facts.append((para.get("title", ""), para.get("idx", 0)))
+
+            q = Question(
+                id=q_id,
+                text=item["question"],
+                type=self._parse_question_type(question_decomposition),
+                gold_answer=item["answer"],
+                supporting_facts=supporting_facts if supporting_facts else None,
+                candidate_corpus=question_corpus or None,
+                metadata={
+                    "question_decomposition": question_decomposition,
+                    "answer_aliases": item.get("answer_aliases", []),
+                },
+            )
+            questions.append(q)
 
         return questions, list(corpus_dict.values())
 

@@ -60,3 +60,45 @@ async def test_evaluator_aggregates_metrics(
     assert 0.0 <= result.avg_exact_match <= 1.0
     assert 0.0 <= result.avg_f1 <= 1.0
     assert result.total_cost_usd >= 0.0
+
+
+class RecordingRAG(DummyRAG):
+    def __init__(self) -> None:
+        super().__init__()
+        self.seen_corpora: dict[str, list[str]] = {}
+
+    async def answer(self, question: Question, corpus: list[Document]) -> RAGResponse:
+        self.seen_corpora[question.id] = [doc.id for doc in corpus]
+        return await super().answer(question, corpus)
+
+
+@pytest.mark.asyncio
+async def test_evaluator_uses_question_scoped_corpus_when_present() -> None:
+    rag = RecordingRAG()
+    question_a_corpus = [Document(id="q1_doc", title="Shared", text="Alpha evidence")]
+    question_b_corpus = [Document(id="q2_doc", title="Shared", text="Beta distractor")]
+    questions = [
+        Question(
+            id="q1",
+            text="Question A?",
+            type=QuestionType.BRIDGE,
+            gold_answer="A",
+            candidate_corpus=question_a_corpus,
+        ),
+        Question(
+            id="q2",
+            text="Question B?",
+            type=QuestionType.BRIDGE,
+            gold_answer="B",
+            candidate_corpus=question_b_corpus,
+        ),
+    ]
+    merged_corpus = question_a_corpus + question_b_corpus
+
+    evaluator = Evaluator(rag, max_concurrency=2, dataset_name="test")
+    await evaluator.evaluate(questions, merged_corpus)
+
+    assert rag.seen_corpora == {
+        "q1": ["q1_doc"],
+        "q2": ["q2_doc"],
+    }

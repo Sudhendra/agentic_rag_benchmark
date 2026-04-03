@@ -35,24 +35,37 @@ class Evaluator:
         questions: list[Question],
         corpus: list[Document],
     ) -> BenchmarkResult:
-        semaphore = asyncio.Semaphore(self.max_concurrency)
+        uses_question_scoped_corpus = any(
+            self._get_question_corpus(question, corpus) is not corpus for question in questions
+        )
+        concurrency = 1 if uses_question_scoped_corpus else self.max_concurrency
+        semaphore = asyncio.Semaphore(concurrency)
         total = len(questions)
         completed = 0
         errors = 0
         start_time = time.time()
+        last_indexed_corpus: list[Document] | None = None
 
         architecture = getattr(self.rag, "get_name", lambda: "unknown")()
         print(
             f"\n[Evaluator] Starting {architecture} on {total} questions "
-            f"(concurrency={self.max_concurrency})",
+            f"(concurrency={concurrency})",
             flush=True,
         )
 
+        if not uses_question_scoped_corpus:
+            await self._index_corpus_if_needed(corpus, last_indexed_corpus)
+            last_indexed_corpus = corpus
+
         async def run_one(question: Question) -> EvaluationResult:
-            nonlocal completed, errors
+            nonlocal completed, errors, last_indexed_corpus
             async with semaphore:
+                question_corpus = self._get_question_corpus(question, corpus)
                 try:
-                    response = await self.rag.answer(question, corpus)
+                    if uses_question_scoped_corpus and last_indexed_corpus is not question_corpus:
+                        await self._index_corpus_if_needed(question_corpus, last_indexed_corpus)
+                        last_indexed_corpus = question_corpus
+                    response = await self.rag.answer(question, question_corpus)
                 except Exception:
                     errors += 1
                     logger.exception("Error processing question %s", question.id)
@@ -157,6 +170,24 @@ class Evaluator:
             total_tokens=total_tokens,
             per_question_results=results,
         )
+
+    @staticmethod
+    def _get_question_corpus(question: Question, default_corpus: list[Document]) -> list[Document]:
+        if question.candidate_corpus is not None:
+            return question.candidate_corpus
+        return default_corpus
+
+    async def _index_corpus_if_needed(
+        self,
+        corpus: list[Document],
+        last_indexed_corpus: list[Document] | None,
+    ) -> None:
+        retriever = getattr(self.rag, "retriever", None)
+        if retriever is None or not hasattr(retriever, "index"):
+            return
+        if last_indexed_corpus is corpus:
+            return
+        await retriever.index(corpus)
 
 
 def _safe_average(values: Iterable[float]) -> float:
