@@ -94,6 +94,7 @@ class RAGResponse:
     num_llm_calls: int
     model: str
     architecture: str
+    supporting_facts: list[tuple[str, int]] | None = None
 
 
 @dataclass
@@ -116,6 +117,9 @@ class EvaluationResult:
     cost_usd: float = 0.0
     num_retrieval_calls: int = 0
     num_llm_calls: int = 0
+    supporting_fact_status: str | None = None
+    predicted_supporting_facts: list[tuple[str, int]] | None = None
+    gold_supporting_facts: list[tuple[str, int]] | None = None
 
 
 @dataclass
@@ -143,3 +147,5 @@ class BenchmarkResult:
     total_tokens: int
     # Raw results
     per_question_results: list[EvaluationResult]
+    avg_joint_em: float | None = None
+    avg_joint_f1: float | None = None

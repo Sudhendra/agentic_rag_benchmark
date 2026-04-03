@@ -14,7 +14,7 @@ from ..core.types import (
     Question,
     QuestionType,
 )
-from .metrics import exact_match, f1_score, joint_metrics
+from .metrics import exact_match, f1_score, joint_metrics, supporting_fact_evaluation
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,12 @@ class Evaluator:
         rag: object,
         max_concurrency: int = 5,
         dataset_name: str = "unknown",
+        compute_supporting_facts: bool = False,
     ) -> None:
         self.rag = rag
         self.max_concurrency = max_concurrency
         self.dataset_name = dataset_name
+        self.compute_supporting_facts = compute_supporting_facts
 
     async def evaluate(
         self,
@@ -74,7 +76,15 @@ class Evaluator:
             gold_answer = question.gold_answer or ""
             answer_em = exact_match(response.answer, gold_answer)
             answer_f1 = f1_score(response.answer, gold_answer)
-            joint_em, joint_f1 = joint_metrics(answer_em, answer_f1, None, None)
+            predicted_supporting_facts = getattr(response, "supporting_facts", None)
+            support_eval = supporting_fact_evaluation(
+                pred_facts=predicted_supporting_facts,
+                gold_facts=question.supporting_facts,
+                compute_supporting_facts=self.compute_supporting_facts,
+            )
+            joint_em, joint_f1 = joint_metrics(
+                answer_em, answer_f1, support_eval.em, support_eval.f1
+            )
 
             completed += 1
             if completed % 50 == 0 or completed == total:
@@ -97,8 +107,8 @@ class Evaluator:
                 f1=answer_f1,
                 predicted_answer=response.answer,
                 gold_answer=gold_answer,
-                supporting_fact_em=None,
-                supporting_fact_f1=None,
+                supporting_fact_em=support_eval.em,
+                supporting_fact_f1=support_eval.f1,
                 joint_em=joint_em,
                 joint_f1=joint_f1,
                 latency_ms=response.latency_ms,
@@ -106,6 +116,9 @@ class Evaluator:
                 cost_usd=response.total_cost_usd,
                 num_retrieval_calls=response.num_retrieval_calls,
                 num_llm_calls=response.num_llm_calls,
+                supporting_fact_status=support_eval.status,
+                predicted_supporting_facts=predicted_supporting_facts,
+                gold_supporting_facts=question.supporting_facts,
             )
 
         results = await asyncio.gather(*(run_one(question) for question in questions))
@@ -134,8 +147,12 @@ class Evaluator:
         supporting_fact_f1s = [
             result.supporting_fact_f1 for result in results if result.supporting_fact_f1 is not None
         ]
+        joint_ems = [result.joint_em for result in results if result.joint_em is not None]
+        joint_f1s = [result.joint_f1 for result in results if result.joint_f1 is not None]
         avg_supporting_fact_em = _safe_average(supporting_fact_ems) if supporting_fact_ems else None
         avg_supporting_fact_f1 = _safe_average(supporting_fact_f1s) if supporting_fact_f1s else None
+        avg_joint_em = _safe_average(joint_ems) if joint_ems else None
+        avg_joint_f1 = _safe_average(joint_f1s) if joint_f1s else None
 
         metrics_by_type: dict[QuestionType, dict[str, float]] = {}
         grouped: dict[QuestionType, list[EvaluationResult]] = defaultdict(list)
@@ -169,6 +186,8 @@ class Evaluator:
             total_cost_usd=total_cost_usd,
             total_tokens=total_tokens,
             per_question_results=results,
+            avg_joint_em=avg_joint_em,
+            avg_joint_f1=avg_joint_f1,
         )
 
     @staticmethod

@@ -26,6 +26,8 @@ def save_results(
         "avg_f1": result.avg_f1,
         "avg_supporting_fact_em": result.avg_supporting_fact_em,
         "avg_supporting_fact_f1": result.avg_supporting_fact_f1,
+        "avg_joint_em": result.avg_joint_em,
+        "avg_joint_f1": result.avg_joint_f1,
         "avg_latency_ms": result.avg_latency_ms,
         "avg_tokens_per_question": result.avg_tokens_per_question,
         "avg_retrieval_calls": result.avg_retrieval_calls,
@@ -33,7 +35,8 @@ def save_results(
         "total_cost_usd": result.total_cost_usd,
         "total_tokens": result.total_tokens,
         "metrics_by_type": {
-            question_type.value: metrics for question_type, metrics in result.metrics_by_type.items()
+            question_type.value: metrics
+            for question_type, metrics in result.metrics_by_type.items()
         },
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
@@ -49,6 +52,9 @@ def save_results(
                 "f1": item.f1,
                 "supporting_fact_em": item.supporting_fact_em,
                 "supporting_fact_f1": item.supporting_fact_f1,
+                "supporting_fact_status": item.supporting_fact_status,
+                "predicted_supporting_facts": item.predicted_supporting_facts,
+                "gold_supporting_facts": item.gold_supporting_facts,
                 "joint_em": item.joint_em,
                 "joint_f1": item.joint_f1,
                 "latency_ms": item.latency_ms,

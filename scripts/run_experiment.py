@@ -140,6 +140,9 @@ async def run_experiment(config: dict[str, Any]) -> Path:
         rag,
         max_concurrency=config.get("evaluation", {}).get("max_concurrency", 5),
         dataset_name=dataset_name,
+        compute_supporting_facts=config.get("evaluation", {}).get(
+            "compute_supporting_facts", False
+        ),
     )
     benchmark_result = await evaluator.evaluate(questions, corpus)
 

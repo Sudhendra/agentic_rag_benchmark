@@ -176,7 +176,13 @@ async def test_run_experiment_skips_global_index_for_question_scoped_corpus(monk
     merged_corpus = question_corpus + [Document(id="q2_doc", title="Doc", text="Other scope")]
 
     class FakeEvaluator:
-        def __init__(self, rag, max_concurrency, dataset_name):
+        def __init__(
+            self,
+            rag,
+            max_concurrency,
+            dataset_name,
+            compute_supporting_facts=False,
+        ):
             self.rag = rag
 
         async def evaluate(self, questions_arg, corpus_arg):
@@ -222,3 +228,66 @@ async def test_run_experiment_skips_global_index_for_question_scoped_corpus(monk
     await run_experiment.run_experiment(config)
 
     assert index_calls == []
+
+
+@pytest.mark.asyncio
+async def test_run_experiment_passes_supporting_fact_flag_to_evaluator(monkeypatch) -> None:
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        run_experiment = importlib.import_module("run_experiment")
+    finally:
+        sys.path.remove(str(scripts_dir))
+
+    captured: dict[str, object] = {}
+
+    class FakeEvaluator:
+        def __init__(self, rag, max_concurrency, dataset_name, compute_supporting_facts=False):
+            captured["compute_supporting_facts"] = compute_supporting_facts
+
+        async def evaluate(self, questions_arg, corpus_arg):
+            return BenchmarkResult(
+                architecture="vanilla_rag",
+                architecture_type=ArchitectureType.VANILLA,
+                model="test-model",
+                dataset="hotpotqa",
+                num_questions=len(questions_arg),
+                avg_exact_match=1.0,
+                avg_f1=1.0,
+                avg_supporting_fact_em=1.0,
+                avg_supporting_fact_f1=1.0,
+                metrics_by_type={},
+                avg_latency_ms=1.0,
+                avg_tokens_per_question=1.0,
+                avg_retrieval_calls=1.0,
+                avg_llm_calls=1.0,
+                total_cost_usd=0.0,
+                total_tokens=1,
+                per_question_results=[],
+                avg_joint_em=1.0,
+                avg_joint_f1=1.0,
+            )
+
+    question = Question(
+        id="q1",
+        text="Question?",
+        type=QuestionType.BRIDGE,
+        gold_answer="Answer",
+        supporting_facts=[("Doc1", 0)],
+    )
+    corpus = [Document(id="d1", title="Doc", text="Doc text")]
+
+    monkeypatch.setattr(run_experiment, "_build_rag", lambda config: object())
+    monkeypatch.setattr(run_experiment, "load_hotpotqa", lambda **kwargs: ([question], corpus))
+    monkeypatch.setattr(run_experiment, "Evaluator", FakeEvaluator)
+    monkeypatch.setattr(run_experiment, "save_results", lambda *args, **kwargs: None)
+
+    config = {
+        "data": {"dataset": "hotpotqa", "setting": "distractor"},
+        "evaluation": {"compute_supporting_facts": True},
+        "experiment": {"output_dir": str(Path("/tmp/test-results"))},
+    }
+
+    await run_experiment.run_experiment(config)
+
+    assert captured["compute_supporting_facts"] is True

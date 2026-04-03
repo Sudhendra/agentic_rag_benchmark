@@ -5,6 +5,7 @@ from src.evaluation.metrics import (
     f1_score,
     joint_metrics,
     normalize_answer,
+    supporting_fact_evaluation,
     supporting_fact_metrics,
 )
 
@@ -236,3 +237,27 @@ class TestJointMetrics:
         joint_em, joint_f1 = joint_metrics(1.0, 0.9, 1.0, None)
         assert joint_em is None
         assert joint_f1 is None
+
+
+class TestSupportingFactEvaluation:
+    def test_returns_explicit_status_when_predictions_missing(self):
+        evaluation = supporting_fact_evaluation(
+            pred_facts=None,
+            gold_facts=[("Doc1", 0)],
+            compute_supporting_facts=True,
+        )
+
+        assert evaluation.status == "not_provided"
+        assert evaluation.em == 0.0
+        assert evaluation.f1 == 0.0
+
+    def test_returns_computed_metrics_when_enabled(self):
+        evaluation = supporting_fact_evaluation(
+            pred_facts=[("Doc1", 0)],
+            gold_facts=[("Doc1", 0), ("Doc2", 1)],
+            compute_supporting_facts=True,
+        )
+
+        assert evaluation.status == "computed"
+        assert evaluation.em == 0.0
+        assert evaluation.f1 == 2 / 3

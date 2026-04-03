@@ -1,8 +1,16 @@
 """Evaluation metrics for multi-hop QA."""
 
+from dataclasses import dataclass
 import re
 import string
 from collections import Counter
+
+
+@dataclass(frozen=True)
+class SupportingFactEvaluation:
+    status: str
+    em: float | None
+    f1: float | None
 
 
 def normalize_answer(s: str) -> str:
@@ -115,6 +123,25 @@ def supporting_fact_metrics(
             f1 = 2 * precision * recall / (precision + recall)
 
     return em, f1
+
+
+def supporting_fact_evaluation(
+    pred_facts: list[tuple[str, int]] | None,
+    gold_facts: list[tuple[str, int]] | None,
+    compute_supporting_facts: bool,
+) -> SupportingFactEvaluation:
+    """Resolve supporting-fact evaluation behavior for one prediction."""
+    if not compute_supporting_facts:
+        return SupportingFactEvaluation(status="disabled", em=None, f1=None)
+
+    if not gold_facts:
+        return SupportingFactEvaluation(status="no_gold_supporting_facts", em=None, f1=None)
+
+    if pred_facts is None:
+        return SupportingFactEvaluation(status="not_provided", em=0.0, f1=0.0)
+
+    em, f1 = supporting_fact_metrics(pred_facts, gold_facts)
+    return SupportingFactEvaluation(status="computed", em=em, f1=f1)
 
 
 def joint_metrics(

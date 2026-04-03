@@ -7,10 +7,11 @@ from src.evaluation.evaluator import Evaluator
 class DummyRAG:
     def __init__(self) -> None:
         self.calls = 0
+        self.predicted_supporting_facts: list[tuple[str, int]] | None = None
 
     async def answer(self, question: Question, corpus: list[Document]) -> RAGResponse:
         self.calls += 1
-        return RAGResponse(
+        response = RAGResponse(
             answer=question.gold_answer or "",
             reasoning_chain=[],
             retrieved_docs=[],
@@ -22,6 +23,8 @@ class DummyRAG:
             model="test-model",
             architecture="vanilla_rag",
         )
+        response.supporting_facts = self.predicted_supporting_facts
+        return response
 
     def get_name(self) -> str:
         return "vanilla_rag"
@@ -102,3 +105,64 @@ async def test_evaluator_uses_question_scoped_corpus_when_present() -> None:
         "q1": ["q1_doc"],
         "q2": ["q2_doc"],
     }
+
+
+@pytest.mark.asyncio
+async def test_evaluator_computes_supporting_fact_and_joint_metrics_when_enabled(
+    mock_rag: DummyRAG, corpus: list[Document]
+) -> None:
+    mock_rag.predicted_supporting_facts = [("Doc1", 0)]
+    questions = [
+        Question(
+            id="q1",
+            text="Question 1?",
+            type=QuestionType.BRIDGE,
+            gold_answer="A",
+            supporting_facts=[("Doc1", 0), ("Doc2", 1)],
+        )
+    ]
+
+    evaluator = Evaluator(
+        mock_rag,
+        max_concurrency=1,
+        dataset_name="test",
+        compute_supporting_facts=True,
+    )
+
+    result = await evaluator.evaluate(questions, corpus)
+
+    assert result.avg_supporting_fact_em == 0.0
+    assert result.avg_supporting_fact_f1 == pytest.approx(2 / 3)
+    assert result.avg_joint_em == 0.0
+    assert result.avg_joint_f1 == pytest.approx(2 / 3)
+    assert result.per_question_results[0].supporting_fact_status == "computed"
+
+
+@pytest.mark.asyncio
+async def test_evaluator_marks_missing_supporting_fact_predictions_explicitly(
+    mock_rag: DummyRAG, corpus: list[Document]
+) -> None:
+    questions = [
+        Question(
+            id="q1",
+            text="Question 1?",
+            type=QuestionType.BRIDGE,
+            gold_answer="A",
+            supporting_facts=[("Doc1", 0)],
+        )
+    ]
+
+    evaluator = Evaluator(
+        mock_rag,
+        max_concurrency=1,
+        dataset_name="test",
+        compute_supporting_facts=True,
+    )
+
+    result = await evaluator.evaluate(questions, corpus)
+
+    assert result.avg_supporting_fact_em == 0.0
+    assert result.avg_supporting_fact_f1 == 0.0
+    assert result.avg_joint_em == 0.0
+    assert result.avg_joint_f1 == 0.0
+    assert result.per_question_results[0].supporting_fact_status == "not_provided"
