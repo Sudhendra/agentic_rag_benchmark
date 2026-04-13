@@ -1,0 +1,14 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "reap_ollama_qwen3.5:2b"
+
+architecture:
+  name: "reap_rag"
+
+reap:
+  max_iterations: 5
+  max_active_requirements: 2
+
+evaluation:
+  max_concurrency: 2

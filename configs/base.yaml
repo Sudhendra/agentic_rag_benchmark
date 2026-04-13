@@ -5,8 +5,9 @@ experiment:
   output_dir: "results"
 
 llm:
-  provider: "openai"  # openai, anthropic
+  provider: "openai"  # openai, anthropic, ollama
   model: "gpt-4o-mini"
+  base_url: null  # override for ollama: "http://localhost:11434/v1"
   temperature: 0.0
   max_tokens: 1024
 

@@ -1,0 +1,11 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "ircot_ollama_qwen3.5:2b"
+
+architecture:
+  name: "ircot_rag"
+
+ircot:
+  max_steps: 4
+  max_context_tokens: 3000

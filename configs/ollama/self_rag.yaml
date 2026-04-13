@@ -1,0 +1,13 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "self_rag_ollama_qwen3.5:2b"
+
+architecture:
+  name: "self_rag"
+
+self_rag:
+  num_candidates: 3
+
+evaluation:
+  max_concurrency: 2

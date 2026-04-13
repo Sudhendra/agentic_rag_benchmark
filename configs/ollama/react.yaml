@@ -1,0 +1,13 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "react_ollama_qwen3.5:2b"
+
+architecture:
+  name: "react_rag"
+
+react:
+  max_iterations: 7
+
+evaluation:
+  max_concurrency: 2  # small model, reduce parallel load

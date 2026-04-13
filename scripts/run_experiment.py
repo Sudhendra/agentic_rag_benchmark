@@ -69,6 +69,8 @@ def _build_rag(config: dict[str, Any]):
         provider=llm_config.get("provider", "openai"),
         model=llm_config.get("model"),
         cache=cache,
+        base_url=llm_config.get("base_url"),
+        think=llm_config.get("think", False),
     )
 
     retrieval_config = config.get("retrieval", {})
@@ -174,6 +176,11 @@ async def run_experiment(config: dict[str, Any]) -> Path:
 
     output_root = Path(config.get("experiment", {}).get("output_dir", "results"))
 
+    # Build a readable path: output_dir / model / dataset / architecture
+    # Sanitize model name (colons are invalid on Windows paths)
+    model_slug = benchmark_result.model.replace(":", "-").replace("/", "-")
+    run_dir = output_root / model_slug / dataset_name / benchmark_result.architecture
+
     run_id = None
     try:
         import mlflow
@@ -201,9 +208,7 @@ async def run_experiment(config: dict[str, Any]) -> Path:
                 }
             )
     except Exception:
-        run_id = run_id or _build_fallback_run_id()
-
-    run_dir = output_root / (run_id or _build_fallback_run_id())
+        pass
     save_results(benchmark_result, run_dir, resolved_config=config)
 
     try:

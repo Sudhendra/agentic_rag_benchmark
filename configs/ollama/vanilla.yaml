@@ -1,0 +1,7 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "vanilla_ollama_qwen3.5:2b"
+
+architecture:
+  name: "vanilla_rag"

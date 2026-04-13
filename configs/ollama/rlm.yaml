@@ -1,0 +1,11 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "rlm_ollama_qwen3.5:2b"
+
+architecture:
+  name: "recursive_lm"
+
+rlm:
+  max_depth: 3
+  memoization: true

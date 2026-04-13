@@ -170,6 +170,48 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 ---
 
+## Open-Source Models (Ollama — Local, Zero Cost)
+
+All runs: HotpotQA distractor, BM25 retrieval, 100-question subset, no API cost.
+
+> **Note:** deepseek-r1:7b results are unreliable — thinking tokens (`<think>...</think>`) are not stripped before scoring, inflating latency and suppressing EM. Results will be re-run with thinking disabled.
+
+### Cross-Architecture Comparison — HotpotQA (100 questions, BM25)
+
+| Architecture | gemma3:4b EM | gemma3:4b F1 | mistral:7b EM | mistral:7b F1 | deepseek-r1:7b EM† | qwen3.5:2b EM |
+|---|---|---|---|---|---|---|
+| Vanilla RAG | **44%** | 53% | 29% | 46% | 19% | 11% |
+| ReAct | 40% | 49% | 21% | 29% | 4% | 0% |
+| Self-RAG | 36% | 43% | 20% | 36% | 6% | — |
+| Planner | 42% | 53% | 36% | 49% | 19% | — |
+| IRCoT | 42% | 52% | 20% | 36% | 5% | — |
+| REAP | 18% | 28% | 10% | 25% | — | — |
+| Recursive LM | 37% | 52% | 25% | 44% | — | — |
+
+† deepseek-r1:7b thinking tokens not stripped — EM scores underestimated.
+
+### Latency Comparison (avg ms/question, BM25, 100 questions)
+
+| Architecture | gemma3:4b | mistral:7b | deepseek-r1:7b† |
+|---|---|---|---|
+| Vanilla RAG | 941ms | 1,148ms | 16,321ms |
+| ReAct | 5,642ms | 8,637ms | 18,322ms |
+| Self-RAG | 8,394ms | 6,540ms | 99,831ms |
+| Planner | 8,040ms | 10,019ms | 79,136ms |
+| IRCoT | 5,818ms | 7,493ms | 63,828ms |
+| REAP | 14,747ms | 24,927ms | — |
+| Recursive LM | 30,307ms | 37,697ms | — |
+
+### Key Findings — Open-Source Models
+
+- **gemma3:4b matches gpt-4o-mini on vanilla** (44% vs 45% EM) at zero cost
+- **gemma3:4b planner (42% EM) beats gpt-4o-mini planner (33.7% EM)** — notable reversal
+- **mistral:7b consistently underperforms gemma3:4b** despite similar parameter count
+- **Small models (qwen3.5:2b) fail on structured-output architectures** (ReAct: 0% EM)
+- **deepseek-r1:7b needs thinking stripped** before it can be fairly evaluated — re-run pending
+
+---
+
 ### Cross-Architecture Comparison (HotpotQA Best Retriever per Architecture)
 
 | Architecture | Type | Best Retriever | Exact Match | F1 Score | Avg LLM Calls | Cost |
@@ -440,6 +482,28 @@ python scripts/run_experiment.py --config configs/vanilla_dense_full.yaml
 
 # Or run a quick test with 100 questions
 python scripts/run_experiment.py --config configs/vanilla_dense.yaml
+```
+
+### Running with Local Models (Ollama)
+
+No API key needed. Requires [Ollama](https://ollama.com) installed locally.
+
+```bash
+# Pull a model
+ollama pull gemma3:4b
+
+# Run all 7 architectures (BM25, HotpotQA 100-question subset)
+for arch in vanilla react self_rag planner ircot reap rlm; do
+  python scripts/run_experiment.py --config configs/ollama/${arch}.yaml
+done
+```
+
+Results save to `results/ollama/{model}/{dataset}/{architecture}/`.
+
+To switch models, edit `configs/ollama_base.yaml`:
+```yaml
+llm:
+  model: "gemma3:4b"  # change to any ollama model
 ```
 
 ### 5. Analyze Results

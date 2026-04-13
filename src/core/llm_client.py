@@ -263,18 +263,87 @@ class OpenAIClient(BaseLLMClient):
         return embeddings, tokens_used, cost
 
 
+class OllamaClient(BaseLLMClient):
+    """Ollama local LLM client via OpenAI-compatible API."""
+
+    DEFAULT_BASE_URL = "http://localhost:11434/v1"
+
+    def __init__(
+        self,
+        model: str = "qwen3.5:2b",
+        cache: SQLiteCache | None = None,
+        track_costs: bool = True,
+        base_url: str | None = None,
+        think: bool = False,
+    ):
+        super().__init__(model, cache, track_costs)
+        self.base_url = base_url or self.DEFAULT_BASE_URL
+        self.think = think
+        self.client = openai.AsyncOpenAI(
+            base_url=self.base_url,
+            api_key="ollama",  # required by SDK, ignored by Ollama
+        )
+
+    async def generate(
+        self,
+        messages: list[dict],
+        temperature: float = 0.0,
+        max_tokens: int = 1024,
+        stop: list[str] | None = None,
+        seed: int | None = None,
+    ) -> tuple[str, int, float]:
+        cache_key = self._make_cache_key(messages, temperature, max_tokens, stop, seed)
+        if self.cache:
+            cached = self.cache.get(cache_key)
+            if cached:
+                return tuple(cached)
+
+        kwargs: dict = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if stop:
+            kwargs["stop"] = stop
+        if not self.think:
+            # Disable extended thinking for models that support it (e.g. qwen3)
+            kwargs["extra_body"] = {"think": False}
+
+        response = await self.client.chat.completions.create(**kwargs)
+
+        content = response.choices[0].message.content or ""
+        total_tokens = response.usage.total_tokens if response.usage else 0
+        cost = 0.0  # Local model — no cost
+
+        if self.track_costs:
+            self.total_tokens += total_tokens
+            if response.usage:
+                self.total_input_tokens += response.usage.prompt_tokens
+                self.total_output_tokens += response.usage.completion_tokens
+            self.call_count += 1
+
+        result = (content, total_tokens, cost)
+        if self.cache:
+            self.cache.set(cache_key, list(result))
+
+        return result
+
+
 def create_llm_client(
     provider: str = "openai",
     model: str | None = None,
     cache: SQLiteCache | None = None,
+    base_url: str | None = None,
     **kwargs,
 ) -> BaseLLMClient:
     """Factory function to create an LLM client.
 
     Args:
-        provider: 'openai' or 'anthropic'
+        provider: 'openai', 'anthropic', or 'ollama'
         model: Model identifier (uses defaults if not specified)
         cache: Optional response cache
+        base_url: Optional base URL override (used for ollama)
         **kwargs: Additional arguments for the client
 
     Returns:
@@ -283,6 +352,10 @@ def create_llm_client(
     if provider == "openai":
         model = model or "gpt-4o-mini"
         return OpenAIClient(model=model, cache=cache, **kwargs)
+    elif provider == "ollama":
+        model = model or "qwen3.5:2b"
+        think = kwargs.pop("think", False)
+        return OllamaClient(model=model, cache=cache, base_url=base_url, think=think, **kwargs)
     elif provider == "anthropic":
         raise NotImplementedError(
             "Anthropic client not yet implemented. "

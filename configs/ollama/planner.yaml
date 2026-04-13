@@ -1,0 +1,14 @@
+inherits: ../ollama_base.yaml
+
+experiment:
+  name: "planner_ollama_qwen3.5:2b"
+
+architecture:
+  name: "planner_rag"
+
+planner:
+  max_iterations: 5
+  max_branching_factor: 2
+
+evaluation:
+  max_concurrency: 2
