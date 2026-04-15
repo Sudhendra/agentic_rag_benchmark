@@ -1,0 +1,29 @@
+{
+  "architecture": "recursive_lm",
+  "architecture_type": "rlm",
+  "model": "gemma3:4b",
+  "dataset": "hotpotqa",
+  "num_questions": 100,
+  "avg_exact_match": 0.37,
+  "avg_f1": 0.5191681096681097,
+  "avg_supporting_fact_em": null,
+  "avg_supporting_fact_f1": null,
+  "avg_joint_em": null,
+  "avg_joint_f1": null,
+  "avg_latency_ms": 30307.13939399997,
+  "avg_tokens_per_question": 18098.62,
+  "avg_retrieval_calls": 17.04,
+  "avg_llm_calls": 24.58,
+  "total_cost_usd": 0.0,
+  "total_tokens": 1809862,
+  "metrics_by_type": {
+    "comparison": {
+      "exact_match": 0.5238095238095238,
+      "f1": 0.6084312512883941
+    },
+    "bridge": {
+      "exact_match": 0.3291139240506329,
+      "f1": 0.4954399327817049
+    }
+  }
+}

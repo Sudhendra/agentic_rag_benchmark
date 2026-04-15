@@ -46,7 +46,7 @@ htmlcov/
 .tox/
 .nox/
 
-# Results and logs
+# Results and logs (raw runs excluded, summaries tracked separately)
 results/
 logs/
 mlruns/

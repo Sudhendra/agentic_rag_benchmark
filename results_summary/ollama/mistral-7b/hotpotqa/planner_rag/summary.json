@@ -1,0 +1,29 @@
+{
+  "architecture": "planner_rag",
+  "architecture_type": "agentic",
+  "model": "mistral:7b",
+  "dataset": "hotpotqa",
+  "num_questions": 100,
+  "avg_exact_match": 0.36,
+  "avg_f1": 0.4920585544723476,
+  "avg_supporting_fact_em": null,
+  "avg_supporting_fact_f1": null,
+  "avg_joint_em": null,
+  "avg_joint_f1": null,
+  "avg_latency_ms": 10019.395438000065,
+  "avg_tokens_per_question": 4681.01,
+  "avg_retrieval_calls": 2.38,
+  "avg_llm_calls": 7.75,
+  "total_cost_usd": 0.0,
+  "total_tokens": 468101,
+  "metrics_by_type": {
+    "comparison": {
+      "exact_match": 0.38095238095238093,
+      "f1": 0.41904761904761906
+    },
+    "bridge": {
+      "exact_match": 0.35443037974683544,
+      "f1": 0.5114665246485413
+    }
+  }
+}
