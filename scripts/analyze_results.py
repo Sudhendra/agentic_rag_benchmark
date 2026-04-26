@@ -18,6 +18,7 @@ import argparse
 import json
 import sys
 from collections import defaultdict
+import random
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,30 @@ def load_results(results_dir: Path) -> dict[str, Any]:
                     predictions.append(json.loads(line))
 
     return {"summary": summary, "predictions": predictions}
+
+
+def compute_bootstrap_ci(values: list[float], n_resamples: int = 1000, confidence_level: float = 0.95) -> tuple[float, float]:
+    """Calculate bootstrap confidence interval for the mean.
+
+    Args:
+        values: List of float values (e.g., F1 scores)
+        n_resamples: Number of bootstrap iterations
+        confidence_level: Desired confidence level (e.g., 0.95)
+
+    Returns:
+        Tuple of (lower_bound, upper_bound)
+    """
+    if not values:
+        return 0.0, 0.0
+    n = len(values)
+    means = []
+    for _ in range(n_resamples):
+        sample = [random.choice(values) for _ in range(n)]
+        means.append(sum(sample) / n)
+    means.sort()
+    lower_idx = int((1 - confidence_level) / 2 * n_resamples)
+    upper_idx = int((1 + confidence_level) / 2 * n_resamples)
+    return means[lower_idx], means[min(upper_idx, n_resamples - 1)]
 
 
 def breakdown_by_question_type(predictions: list[dict]) -> dict[str, dict[str, float]]:
@@ -332,11 +357,12 @@ def find_run_directories(results_path: Path) -> list[Path]:
     return sorted(run_dirs, key=lambda x: x.name)
 
 
-def compare_runs(run_dirs: list[Path]) -> list[dict[str, Any]]:
+def compare_runs(run_dirs: list[Path], compute_stats: bool = False) -> list[dict[str, Any]]:
     """Compare metrics across multiple runs.
 
     Args:
         run_dirs: List of run directories
+        compute_stats: Whether to compute bootstrap confidence intervals
 
     Returns:
         List of summary records for each run
@@ -346,19 +372,25 @@ def compare_runs(run_dirs: list[Path]) -> list[dict[str, Any]]:
         try:
             results = load_results(run_dir)
             summary = results["summary"]
-            rows.append(
-                {
-                    "run_id": run_dir.name[:12],  # Truncate long run IDs
-                    "architecture": summary.get("architecture", "unknown"),
-                    "model": summary.get("model", "unknown"),
-                    "num_questions": summary.get("num_questions", 0),
-                    "exact_match": summary.get("avg_exact_match", 0),
-                    "f1": summary.get("avg_f1", 0),
-                    "latency_ms": summary.get("avg_latency_ms", 0),
-                    "tokens_per_q": summary.get("avg_tokens_per_question", 0),
-                    "cost_usd": summary.get("total_cost_usd", 0),
-                }
-            )
+            predictions = results["predictions"]
+            row = {
+                "run_id": run_dir.name[:12],  # Truncate long run IDs
+                "architecture": summary.get("architecture", "unknown"),
+                "model": summary.get("model", "unknown"),
+                "num_questions": summary.get("num_questions", 0),
+                "exact_match": summary.get("avg_exact_match", 0),
+                "f1": summary.get("avg_f1", 0),
+                "latency_ms": summary.get("avg_latency_ms", 0),
+                "tokens_per_q": summary.get("avg_tokens_per_question", 0),
+                "cost_usd": summary.get("total_cost_usd", 0),
+            }
+            if compute_stats and predictions:
+                f1_scores = [p.get("f1", 0) for p in predictions]
+                if f1_scores:
+                    ci_lower, ci_upper = compute_bootstrap_ci(f1_scores)
+                    row["f1_ci_lower"] = ci_lower
+                    row["f1_ci_upper"] = ci_upper
+            rows.append(row)
         except Exception as e:
             print(f"Warning: Failed to load {run_dir}: {e}", file=sys.stderr)
 
@@ -594,22 +626,36 @@ def print_error_analysis_by_qtype(qtype_stats: dict, threshold: float = 0.5) -> 
         )
 
 
-def print_comparison(rows: list[dict]) -> None:
+def print_comparison(rows: list[dict], show_stats: bool = False) -> None:
     """Print comparison table."""
     print("\n" + "=" * 80)
     print("RUN COMPARISON")
     print("=" * 80 + "\n")
 
-    columns = [
-        "run_id",
-        "architecture",
-        "model",
-        "num_questions",
-        "exact_match",
-        "f1",
-        "latency_ms",
-        "cost_usd",
-    ]
+    if show_stats:
+        columns = [
+            "run_id",
+            "architecture",
+            "model",
+            "num_questions",
+            "exact_match",
+            "f1",
+            "f1_ci_lower",
+            "f1_ci_upper",
+            "latency_ms",
+            "cost_usd",
+        ]
+    else:
+        columns = [
+            "run_id",
+            "architecture",
+            "model",
+            "num_questions",
+            "exact_match",
+            "f1",
+            "latency_ms",
+            "cost_usd",
+        ]
     print(format_table(rows, columns))
 
     # Find best run
@@ -671,9 +717,19 @@ def main():
         help="Maximum errors to show (default: 20)",
     )
     parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Compute bootstrap confidence intervals for F1 scores",
+    )
+    parser.add_argument(
         "--export",
         type=Path,
         help="Export comparison to CSV file",
+    )
+    parser.add_argument(
+        "--pareto",
+        type=Path,
+        help="Export pareto frontier data (cost/latency vs f1) to CSV file",
     )
 
     args = parser.parse_args()
@@ -690,11 +746,16 @@ def main():
             sys.exit(1)
 
         print(f"Found {len(run_dirs)} run(s) to compare")
-        rows = compare_runs(run_dirs)
-        print_comparison(rows)
+        rows = compare_runs(run_dirs, compute_stats=args.stats)
+        print_comparison(rows, show_stats=args.stats)
 
         if args.export:
-            export_csv(rows, args.export)
+            columns = list(rows[0].keys()) if rows else None
+            export_csv(rows, args.export, columns=columns)
+            
+        if args.pareto:
+            pareto_cols = ["run_id", "architecture", "model", "f1", "latency_ms", "cost_usd"]
+            export_csv(rows, args.pareto, columns=pareto_cols)
     else:
         # Single run mode
         if (args.results / "summary.json").exists():
