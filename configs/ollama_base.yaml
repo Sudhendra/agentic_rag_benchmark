@@ -5,7 +5,7 @@ inherits: base.yaml
 
 llm:
   provider: "ollama"
-  model: "deepseek-r1:7b"
+  model: "mistral:7b"
   base_url: "http://localhost:11434/v1"
   think: false  # disable extended thinking (qwen3 and similar models)
   temperature: 0.0
@@ -20,4 +20,4 @@ experiment:
   output_dir: "results/ollama"
 
 data:
-  subset_size: 100
+  subset_size: null  # full validation set

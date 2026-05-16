@@ -3,27 +3,27 @@
   "architecture_type": "agentic",
   "model": "mistral:7b",
   "dataset": "hotpotqa",
-  "num_questions": 100,
-  "avg_exact_match": 0.21,
-  "avg_f1": 0.29316655636174405,
+  "num_questions": 7405,
+  "avg_exact_match": 0.16569885212694124,
+  "avg_f1": 0.25030336658869035,
   "avg_supporting_fact_em": null,
   "avg_supporting_fact_f1": null,
   "avg_joint_em": null,
   "avg_joint_f1": null,
-  "avg_latency_ms": 8637.192520000026,
-  "avg_tokens_per_question": 6865.35,
-  "avg_retrieval_calls": 1.91,
-  "avg_llm_calls": 3.44,
+  "avg_latency_ms": 5126.389002917081,
+  "avg_tokens_per_question": 6868.677650236326,
+  "avg_retrieval_calls": 1.8737339635381498,
+  "avg_llm_calls": 3.4225523295070897,
   "total_cost_usd": 0.0,
-  "total_tokens": 686535,
+  "total_tokens": 50862558,
   "metrics_by_type": {
     "comparison": {
-      "exact_match": 0.19047619047619047,
-      "f1": 0.3808802308802309
+      "exact_match": 0.2004034969737727,
+      "f1": 0.2912568831901374
     },
     "bridge": {
-      "exact_match": 0.21518987341772153,
-      "f1": 0.2698502631353108
+      "exact_match": 0.1569787090233187,
+      "f1": 0.24001308622600842
     }
   }
 }
