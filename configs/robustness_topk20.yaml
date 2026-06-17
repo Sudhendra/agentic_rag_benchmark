@@ -1,0 +1,20 @@
+inherits: base.yaml
+
+experiment:
+  name: "robust_topk20"
+
+architecture:
+  name: "vanilla_rag"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+
+retrieval:
+  method: "bm25"
+  top_k: 20
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 100

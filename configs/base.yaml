@@ -25,7 +25,7 @@ data:
 
 evaluation:
   max_concurrency: 5
-  compute_supporting_facts: false
+  compute_supporting_facts: true
   save_predictions: true
 
 cache:

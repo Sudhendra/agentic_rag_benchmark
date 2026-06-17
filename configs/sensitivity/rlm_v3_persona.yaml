@@ -1,0 +1,28 @@
+inherits: ../base.yaml
+
+experiment:
+  name: "sens_rlm_v3_persona"
+
+architecture:
+  name: "recursive_lm"
+
+rlm:
+  max_depth: 3
+  memoization: true
+  max_context_tokens: 4000
+  prompt_path: "prompts/sensitivity/rlm_v3_persona.txt"
+  combine_prompt_path: "prompts/rlm_combine.txt"
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 50
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 1024

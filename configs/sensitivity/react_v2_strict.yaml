@@ -1,0 +1,24 @@
+inherits: ../base.yaml
+
+experiment:
+  name: "sens_react_v2_strict"
+
+architecture:
+  name: "react_rag"
+
+react:
+  prompt_path: "prompts/sensitivity/react_v2_strict.txt"
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 50
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 1024

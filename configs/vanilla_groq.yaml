@@ -1,0 +1,15 @@
+inherits: base.yaml
+
+experiment:
+  name: "vanilla_groq_llama3_70b"
+
+llm:
+  provider: "groq"
+  model: "llama3-70b-8192"
+
+retrieval:
+  method: "dense"
+  embedding_model: "text-embedding-3-small"
+
+data:
+  subset_size: 100

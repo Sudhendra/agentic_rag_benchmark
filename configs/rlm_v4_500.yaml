@@ -1,0 +1,22 @@
+inherits: base.yaml
+
+experiment:
+  name: "rlm_v4_500"
+
+architecture:
+  name: "recursive_lm"
+
+rlm:
+  max_depth: 3
+  memoization: true
+  max_context_tokens: 4000
+  prompt_path: "prompts/sensitivity/rlm_v4_strict.txt"
+  combine_prompt_path: "prompts/rlm_combine.txt"
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 500

@@ -1,0 +1,12 @@
+Question: {question}
+
+{context_section}
+
+Choose one:
+- DIRECT: <short extractive answer>
+- DECOMPOSE:
+  - SUB: <sub question>
+  - SUB: <sub question>
+  COMBINE: <how to combine>
+
+OUTPUT:

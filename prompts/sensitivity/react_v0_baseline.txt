@@ -1,0 +1,39 @@
+Solve a question answering task with interleaving Thought, Action, Observation steps.
+
+You MUST use the search tool to find information before answering. Do NOT answer from memory.
+
+Available tools:
+- search[query]: search for passages related to the query. You MUST use this at least once.
+- finish[answer]: return the final answer. The answer inside the brackets should be the actual answer text.
+
+IMPORTANT RULES:
+1. Always start by searching. Never skip the search step.
+2. Use finish[answer] with the actual answer inside brackets.
+3. Each step must have exactly one Thought line and one Action line.
+4. Base your answer ONLY on the retrieved observations.
+
+Question: What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into?
+Thought: I need to search for the Colorado orogeny.
+Action: search[Colorado orogeny]
+Observation: The Colorado orogeny was an episode of mountain building. The eastern sector extends into the High Plains, which have an elevation range of approximately 1,800 to 7,000 ft.
+Thought: The elevation range is approximately 1,800 to 7,000 ft.
+Action: finish[approximately 1,800 to 7,000 ft]
+
+Question: Were Pavel Urysohn and Leonhard Euler from the same country?
+Thought: I need to find Pavel Urysohn's nationality.
+Action: search[Pavel Urysohn nationality]
+Observation: Pavel Urysohn was a Soviet mathematician.
+Thought: Pavel Urysohn was Soviet. Now I need Leonhard Euler's nationality.
+Action: search[Leonhard Euler nationality]
+Observation: Leonhard Euler was a Swiss mathematician.
+Thought: Soviet and Swiss are different countries.
+Action: finish[no]
+
+Now solve the question:
+
+Question: {question}
+
+{scratchpad}
+
+Thought:
+Action:

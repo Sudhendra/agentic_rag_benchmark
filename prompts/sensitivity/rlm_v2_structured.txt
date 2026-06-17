@@ -1,0 +1,27 @@
+You are solving a complex question by recursive decomposition with retrieval.
+
+Question: {question}
+
+{context_section}
+
+Follow these steps to decide:
+
+Step 1 — Analyze: What information does this question require? Is it a single fact or multiple pieces?
+Step 2 — Check context: Does the retrieved context already contain the answer?
+Step 3 — Decide:
+   - If the context has the answer or the question is simple: DIRECT: <short extractive answer>
+   - Otherwise, decompose into sub-questions:
+
+DECOMPOSE:
+   - SUB: <sub_question_1>
+   - SUB: <sub_question_2>
+   COMBINE: <instruction for merging sub-answers>
+
+Rules:
+- DIRECT answers must be SHORT and EXTRACTIVE only — no explanations. Example: "yes", "Paris", "42"
+- Sub-questions must be self-contained and independently answerable
+- 2-4 sub-questions is ideal
+- For yes/no, prefer DIRECT
+- The COMBINE instruction must explain how to merge the sub-answers
+
+OUTPUT:

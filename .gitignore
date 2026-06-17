@@ -63,5 +63,12 @@ results_offline_e2e/*
 docs/plans/2026-02-15-planner-rag-leftover-implementation-plan.md
 docs/plans/2026-02-13-planner-rag-bridge-hardening-plan.md
 
+# Paper artifacts (PDF, ZIP, extraction)
+COMPASS_*
+
+# Personal notes / scratch files
+imp\ points\ to\ implement*
+stuff\ that\ needs\ work*
+
 # Windows reserved names
 nul

@@ -107,7 +107,11 @@ class BaseLLMClient(ABC):
 
 
 class OpenAIClient(BaseLLMClient):
-    """OpenAI API client with caching and cost tracking."""
+    """OpenAI-compatible API client with caching and cost tracking.
+
+    Supports any OpenAI-compatible provider (OpenAI, Groq, Together AI, etc.)
+    by configuring base_url and api_key_env_var.
+    """
 
     # Pricing per 1M tokens (as of Jan 2026)
     PRICING = {
@@ -130,26 +134,44 @@ class OpenAIClient(BaseLLMClient):
         cache: SQLiteCache | None = None,
         track_costs: bool = True,
         api_key: str | None = None,
+        base_url: str | None = None,
+        api_key_env_var: str | None = None,
+        pricing: dict | None = None,
     ):
-        """Initialize OpenAI client.
+        """Initialize OpenAI-compatible client.
 
         Args:
-            model: OpenAI model to use
+            model: Model identifier (e.g. 'gpt-4o-mini', 'llama3-70b-8192')
             cache: Optional response cache
-            track_costs: Whether to track costs
-            api_key: Optional API key (defaults to OPENAI_API_KEY env var)
+            track_costs: Whether to track token usage and costs
+            api_key: Optional API key (defaults to api_key_env_var env var)
+            base_url: Optional custom API base URL (for Groq, Together, etc.)
+            api_key_env_var: Environment variable name for API key (default: OPENAI_API_KEY)
+            pricing: Optional custom pricing dict to merge into PRICING
         """
         super().__init__(model, cache, track_costs)
 
-        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        env_var = api_key_env_var or "OPENAI_API_KEY"
+        api_key = api_key or os.getenv(env_var)
         if not api_key:
-            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
+            raise ValueError(f"API key not found. Set {env_var} environment variable.")
 
-        self.client = openai.AsyncOpenAI(api_key=api_key)
+        client_kwargs: dict = {"api_key": api_key}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+        self.client = openai.AsyncOpenAI(**client_kwargs)
+
+        if pricing:
+            self.PRICING = {**self.PRICING, **pricing}
 
     def _calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
-        """Calculate cost in USD for the given token counts."""
-        pricing = self.PRICING.get(self.model, self.PRICING["gpt-4o-mini"])
+        """Calculate cost in USD for the given token counts.
+
+        Returns 0.0 for models not in the pricing table (e.g. free-tier providers).
+        """
+        pricing = self.PRICING.get(self.model)
+        if pricing is None:
+            return 0.0
         input_cost = (input_tokens / 1_000_000) * pricing["input"]
         output_cost = (output_tokens / 1_000_000) * pricing["output"]
         return input_cost + output_cost
@@ -272,16 +294,21 @@ def create_llm_client(
     """Factory function to create an LLM client.
 
     Args:
-        provider: 'openai' or 'anthropic'
+        provider: 'openai', 'groq', or 'anthropic' (not yet implemented)
         model: Model identifier (uses defaults if not specified)
         cache: Optional response cache
-        **kwargs: Additional arguments for the client
+        **kwargs: Additional arguments for the client (e.g. base_url, api_key_env_var)
 
     Returns:
         Configured LLM client
     """
     if provider == "openai":
         model = model or "gpt-4o-mini"
+        return OpenAIClient(model=model, cache=cache, **kwargs)
+    elif provider == "groq":
+        kwargs.setdefault("api_key_env_var", "GROQ_API_KEY")
+        kwargs.setdefault("base_url", "https://api.groq.com/openai/v1")
+        model = model or "llama3-70b-8192"
         return OpenAIClient(model=model, cache=cache, **kwargs)
     elif provider == "anthropic":
         raise NotImplementedError(

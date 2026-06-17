@@ -1,0 +1,23 @@
+inherits: base.yaml
+
+experiment:
+  name: "groq_vanilla_bm25_100"
+
+architecture:
+  name: "vanilla_rag"
+
+llm:
+  provider: "groq"
+  model: "llama-3.3-70b-versatile"
+  temperature: 0.0
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 100
+
+evaluation:
+  max_concurrency: 3
