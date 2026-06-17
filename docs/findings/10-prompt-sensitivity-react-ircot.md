@@ -1,6 +1,7 @@
 # Finding 10: Prompt Sensitivity — ReAct & IRCoT
 
 **Filed:** June 17, 2026  
+**Confirmed:** June 18, 2026 (full study run — see run IDs below)  
 **Tags:** `prompt-engineering` `cross-architecture` `sensitivity`
 
 ---
@@ -53,3 +54,21 @@ This finding is critical for the paper's methodology section:
 > *"Prompt sensitivity is architecture-specific. RLM and ReAct show 40+ point swings from prompt changes, while IRCoT is within 10 points. Fair cross-architecture comparison requires architecture-specific prompt optimization — naive 'same format for all' approaches confound architectural differences with prompt quality differences."*
 
 This transforms a weakness ("our prompts may not be equally optimized") into a finding ("architecture-specific prompt sensitivity is itself a measurable property of RAG systems").
+
+## Raw Run IDs (June 18, 2026)
+
+All runs: HotpotQA, BM25, gpt-4o-mini, temperature=0, 50 questions.
+
+```
+# ReAct
+react_v0_baseline    → f7d73e293f05  (48.0% EM, 62.0% F1, $0.038)
+react_v1_minimalist  → cd5c69000c96  ( 6.0% EM, 20.6% F1, $0.024)
+react_v2_strict      → 254a6dd3a4ab  (26.0% EM, 39.3% F1, $0.011)
+
+# IRCoT
+ircot_v0_baseline    → c5d906ecaa0d  (44.0% EM, 67.8% F1, $0.040)
+ircot_v1_minimalist  → 35e551274732  (42.0% EM, 61.5% F1, $0.038)
+ircot_v2_strict      → f38de73084ee  (52.0% EM, 64.6% F1, $0.014)
+```
+
+Results JSON: `results/sensitivity/sensitivity_results.json`

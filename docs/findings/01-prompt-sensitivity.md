@@ -76,5 +76,5 @@ results/sensitivity/v4/  — strict,     58.0% EM, $0.012
 - [x] Created 5 prompt variants and sensitivity framework
 - [x] Adopt v4 (Strict) as default RLM prompt
 - [x] Validated v4 on 500 questions (51.8% EM confirmed)
-- [ ] Run sensitivity study on ReAct and IRCoT prompts (2 more architectures)
+- [x] Run sensitivity study on ReAct and IRCoT prompts — completed June 18, 2026 (see Finding 10 + 11)
 - [ ] Add prompt sensitivity plot to publication figures

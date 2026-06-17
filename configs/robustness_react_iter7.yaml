@@ -1,0 +1,23 @@
+inherits: base.yaml
+
+experiment:
+  name: "robust_react_iter7"
+
+architecture:
+  name: "react_rag"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+
+react:
+  max_iterations: 7
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 50
