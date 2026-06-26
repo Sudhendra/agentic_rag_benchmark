@@ -1,0 +1,40 @@
+% Auto-generated: Full musique results
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Architecture} & \textbf{Retriever} & \textbf{EM} & \textbf{F1} & \textbf{Latency} & \textbf{LLM Calls} & \textbf{Cost} \\
+\midrule
+Vanilla RAG & Dense & \textbf{12.6%} & 24.3% & 1089ms & 1.0 & \$0.27 \\
+Vanilla RAG & Hybrid & 12.0% & 23.5% & 1484ms & 1.0 & \$0.27 \\
+Vanilla RAG & BM25 & 6.9% & 16.3% & 1251ms & 1.0 & \$0.26 \\
+\midrule
+ReAct RAG & Dense & \textbf{19.7%} & 27.8% & 9374ms & 5.6 & \$5.24 \\
+ReAct RAG & Hybrid & 19.3% & 28.1% & 8876ms & 5.6 & \$5.15 \\
+ReAct RAG & BM25 & 11.9% & 18.0% & 11703ms & 6.1 & \$5.74 \\
+\midrule
+Self-RAG & Dense & \textbf{11.6%} & 23.2% & 4290ms & 13.8 & \$1.00 \\
+Self-RAG & Hybrid & 10.8% & 22.3% & 977ms & 13.6 & \$0.95 \\
+Self-RAG & BM25 & 6.8% & 16.3% & 6630ms & 14.1 & \$0.98 \\
+\midrule
+Planner RAG & Dense & \textbf{15.8%} & 25.9% & 6227ms & 10.1 & \$2.08 \\
+Planner RAG & Hybrid & 14.6% & 24.3% & 12642ms & 10.2 & \$2.03 \\
+Planner RAG & BM25 & 7.5% & 15.1% & 11760ms & 10.8 & \$2.07 \\
+\midrule
+IRCoT & Dense & \textbf{21.7%} & 35.9% & 6615ms & 4.6 & \$1.71 \\
+IRCoT & Hybrid & 20.8% & 34.6% & 8389ms & 4.6 & \$1.73 \\
+IRCoT & BM25 & 16.8% & 28.1% & 5824ms & 4.6 & \$1.68 \\
+\midrule
+REAP & Dense & \textbf{7.0%} & 15.7% & 4751ms & 6.9 & \$2.14 \\
+REAP & Hybrid & 7.0% & 15.6% & 5230ms & 6.9 & \$2.17 \\
+REAP & BM25 & 4.5% & 11.6% & 12098ms & 7.7 & \$2.23 \\
+\midrule
+Recursive LM & Dense & 16.5% & 28.6% & 13235ms & 7.8 & \$2.14 \\
+Recursive LM & Hybrid & \textbf{16.7%} & 28.9% & 8772ms & 7.4 & \$2.10 \\
+Recursive LM & BM25 & 9.8% & 19.8% & 13753ms & 12.3 & \$3.09 \\
+\midrule
+\bottomrule
+\end{tabular}
+\caption{Full musique results. Best per architecture in bold.}
+\label{tab:musique_full}
+\end{table*}

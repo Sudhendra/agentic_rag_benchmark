@@ -72,3 +72,10 @@ stuff\ that\ needs\ work*
 
 # Windows reserved names
 nul
+# Ruff linter cache
+.ruff_cache/
+# Generated CSV analysis outputs
+full_stats_table.csv
+pareto_frontier.csv
+
+paper_v3/

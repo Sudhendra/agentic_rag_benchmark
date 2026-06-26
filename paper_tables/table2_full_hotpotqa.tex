@@ -1,0 +1,40 @@
+% Auto-generated: Full hotpotqa results
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Architecture} & \textbf{Retriever} & \textbf{EM} & \textbf{F1} & \textbf{Latency} & \textbf{LLM Calls} & \textbf{Cost} \\
+\midrule
+Vanilla RAG & Dense & \textbf{45.0%} & 59.5% & 1411ms & 1.0 & \$0.79 \\
+Vanilla RAG & Hybrid & 44.1% & 58.6% & 2127ms & 1.0 & \$0.76 \\
+Vanilla RAG & BM25 & 38.2% & 51.5% & 2321ms & 1.0 & \$0.77 \\
+\midrule
+ReAct RAG & Dense & 45.7% & 59.3% & 5950ms & 4.1 & \$9.66 \\
+ReAct RAG & Hybrid & \textbf{46.0%} & 59.9% & 7611ms & 4.0 & \$9.18 \\
+ReAct RAG & BM25 & 38.8% & 50.8% & 3923ms & 4.6 & \$11.16 \\
+\midrule
+Self-RAG & Dense & 40.6% & 54.9% & 4497ms & 10.8 & \$2.13 \\
+Self-RAG & Hybrid & \textbf{40.6%} & 55.0% & 1893ms & 10.7 & \$2.08 \\
+Self-RAG & BM25 & 37.0% & 50.4% & 9666ms & 11.0 & \$2.15 \\
+\midrule
+Planner RAG & Dense & \textbf{33.7%} & 44.9% & 4629ms & 8.1 & \$4.03 \\
+Planner RAG & Hybrid & 33.5% & 44.5% & 6857ms & 8.1 & \$3.98 \\
+Planner RAG & BM25 & 27.7% & 37.7% & 14618ms & 8.4 & \$4.09 \\
+\midrule
+IRCoT & Dense & 42.0% & 59.2% & 3278ms & 4.2 & \$3.77 \\
+IRCoT & Hybrid & \textbf{42.9%} & 59.9% & 9874ms & 4.2 & \$3.81 \\
+IRCoT & BM25 & 38.5% & 54.7% & 6463ms & 4.2 & \$3.97 \\
+\midrule
+REAP & Dense & \textbf{28.1%} & 41.7% & 4613ms & 6.2 & \$6.49 \\
+REAP & Hybrid & 27.3% & 41.1% & 3777ms & 6.4 & \$6.54 \\
+REAP & BM25 & 24.6% & 36.6% & 14713ms & 7.9 & \$7.41 \\
+\midrule
+Recursive LM & Dense & 46.1% & 60.1% & 4951ms & 3.6 & \$3.34 \\
+Recursive LM & Hybrid & \textbf{46.3%} & 60.2% & 7078ms & 3.6 & \$3.19 \\
+Recursive LM & BM25 & 40.1% & 52.6% & 9576ms & 6.0 & \$5.01 \\
+\midrule
+\bottomrule
+\end{tabular}
+\caption{Full hotpotqa results. Best per architecture in bold.}
+\label{tab:hotpotqa_full}
+\end{table*}
