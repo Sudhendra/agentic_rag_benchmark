@@ -1,0 +1,30 @@
+CRITICAL: You MUST follow the output format exactly. No deviations.
+
+Question: {question}
+
+{context_section}
+
+Decide: DIRECT or DECOMPOSE.
+
+DIRECT FORMAT (use when context suffices or question is simple):
+DIRECT: <answer>
+The answer MUST be a single word or short phrase — nothing else.
+EXAMPLES OF CORRECT answers: "Paris", "42", "yes", "no", "Albert Einstein", "February 14, 1842"
+EXAMPLES OF INCORRECT answers: "The answer is Paris", "I think it's 42", "Based on the context, Albert Einstein", "42 years old", "Yes, they are"
+WRONG: Including any text before or after the answer.
+
+DECOMPOSE FORMAT (use when multiple pieces of information are needed):
+DECOMPOSE:
+- SUB: <exactly one self-contained question>
+- SUB: <exactly one self-contained question>
+COMBINE: <precise instruction for combining sub-answers>
+
+DECOMPOSE RULES:
+- Each SUB must be a complete, independently answerable question ending with "?"
+- Do NOT include information from one sub-question in another
+- 2-4 sub-questions maximum
+- COMBINE must specify exact merge logic
+
+VALIDATION: Before outputting, verify your format matches one of the two patterns above exactly.
+
+OUTPUT:

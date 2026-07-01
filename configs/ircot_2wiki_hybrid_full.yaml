@@ -1,0 +1,20 @@
+inherits: base.yaml
+
+experiment:
+  name: "ircot_2wiki_hybrid_full"
+
+architecture:
+  name: "ircot_rag"
+
+ircot:
+  max_steps: 4
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "hybrid"
+  top_k: 3
+
+data:
+  dataset: "2wikimultihop"
+  subset_size: null

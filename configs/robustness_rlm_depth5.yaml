@@ -1,0 +1,27 @@
+inherits: base.yaml
+
+experiment:
+  name: "robust_rlm_depth5"
+
+architecture:
+  name: "recursive_lm"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.0
+
+rlm:
+  max_depth: 5
+  memoization: true
+  max_context_tokens: 4000
+  prompt_path: "prompts/sensitivity/rlm_v4_strict.txt"
+  combine_prompt_path: "prompts/rlm_combine.txt"
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 50

@@ -1,0 +1,28 @@
+inherits: base.yaml
+
+experiment:
+  name: "groq_rlm_bm25_100"
+
+architecture:
+  name: "recursive_lm"
+
+llm:
+  provider: "groq"
+  model: "llama-3.3-70b-versatile"
+  temperature: 0.0
+
+rlm:
+  max_depth: 3
+  memoization: true
+  max_context_tokens: 4000
+
+retrieval:
+  method: "bm25"
+  top_k: 5
+
+data:
+  dataset: "hotpotqa"
+  subset_size: 100
+
+evaluation:
+  max_concurrency: 3

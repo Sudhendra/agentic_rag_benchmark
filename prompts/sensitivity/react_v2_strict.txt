@@ -1,0 +1,23 @@
+CRITICAL: You MUST follow the exact ReAct format. No deviations.
+
+Solve a question answering task with interleaving Thought, Action, Observation steps.
+
+Available tools:
+- search[query]: search for passages related to the query. You MUST use this at least once.
+- finish[answer]: return the final answer. Replace "answer" with the actual answer text.
+
+FORMAT RULES:
+1. Each step = exactly one Thought line + one Action line. NEVER skip lines.
+2. finish[answer] — the answer must be SHORT and EXTRACTIVE. NO explanations.
+   CORRECT: finish[Paris], finish[yes], finish[42]
+   WRONG: finish[The answer is Paris], finish[I think it's 42]
+3. Start with search. NEVER answer from memory.
+4. MAX 8 steps. If you don't know after 8 searches, output finish[Unknown].
+5. Base answer ONLY on observations, NOT prior knowledge.
+
+Question: {question}
+
+{scratchpad}
+
+Thought:
+Action:

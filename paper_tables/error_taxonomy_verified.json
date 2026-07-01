@@ -1,0 +1,142 @@
+{
+  "hotpotqa_Vanilla RAG": {
+    "correct": 0.44956110735989196,
+    "complete_miss": 0.2776502363268062,
+    "low_overlap": 0.04010803511141121,
+    "partial": 0.09223497636731938,
+    "near_miss": 0.137339635381499,
+    "verbose": 0.0031060094530722484,
+    "loop": 0.0,
+    "yes_no_flip": 0.006887238352464551
+  },
+  "hotpotqa_ReAct RAG": {
+    "correct": 0.4602295746117488,
+    "complete_miss": 0.29574611748818364,
+    "low_overlap": 0.02633355840648211,
+    "partial": 0.07116812964213369,
+    "near_miss": 0.14098582039162727,
+    "verbose": 0.005536799459824443,
+    "loop": 0.0,
+    "yes_no_flip": 0.003511141120864281
+  },
+  "hotpotqa_Self-RAG": {
+    "correct": 0.4064821066846725,
+    "complete_miss": 0.32207967589466574,
+    "low_overlap": 0.039837947332883185,
+    "partial": 0.09777177582714382,
+    "near_miss": 0.13085752869682646,
+    "verbose": 0.002970965563808238,
+    "loop": 0.0,
+    "yes_no_flip": 0.008777852802160702
+  },
+  "hotpotqa_Planner RAG": {
+    "correct": 0.3367994598244429,
+    "complete_miss": 0.4442943956785955,
+    "low_overlap": 0.034031060094530725,
+    "partial": 0.08170155300472653,
+    "near_miss": 0.10033760972316003,
+    "verbose": 0.002835921674544227,
+    "loop": 0.0,
+    "yes_no_flip": 0.00675219446320054
+  },
+  "hotpotqa_IRCoT": {
+    "correct": 0.42930452397029034,
+    "complete_miss": 0.23659689399054692,
+    "low_overlap": 0.05077650236326806,
+    "partial": 0.137339635381499,
+    "near_miss": 0.14139095205941932,
+    "verbose": 0.004591492234976367,
+    "loop": 0.0,
+    "yes_no_flip": 0.0013504388926401081
+  },
+  "hotpotqa_REAP": {
+    "correct": 0.2812964213369345,
+    "complete_miss": 0.4286293045239703,
+    "low_overlap": 0.06185010128291695,
+    "partial": 0.11600270087778528,
+    "near_miss": 0.10925050641458474,
+    "verbose": 0.002970965563808238,
+    "loop": 0.0,
+    "yes_no_flip": 0.010398379473328832
+  },
+  "hotpotqa_Recursive LM": {
+    "correct": 0.46320054017555706,
+    "complete_miss": 0.2861580013504389,
+    "low_overlap": 0.0287643484132343,
+    "partial": 0.0825118163403106,
+    "near_miss": 0.13666441593517895,
+    "verbose": 0.0027008777852802163,
+    "loop": 0.0,
+    "yes_no_flip": 0.005671843349088454
+  },
+  "musique_Vanilla RAG": {
+    "correct": 0.12577575506826644,
+    "complete_miss": 0.5875051717004551,
+    "low_overlap": 0.0860570955730244,
+    "partial": 0.12577575506826644,
+    "near_miss": 0.07364501448076127,
+    "verbose": 0.0012412081092263137,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_ReAct RAG": {
+    "correct": 0.19735208936698387,
+    "complete_miss": 0.6479106330161357,
+    "low_overlap": 0.029375258585022754,
+    "partial": 0.049234588332643776,
+    "near_miss": 0.06619776582540339,
+    "verbose": 0.00992966487381051,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_Self-RAG": {
+    "correct": 0.11625982623086471,
+    "complete_miss": 0.6048820852296235,
+    "low_overlap": 0.07654116673562267,
+    "partial": 0.13115432354158046,
+    "near_miss": 0.06868018204385602,
+    "verbose": 0.0024824162184526274,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_Planner RAG": {
+    "correct": 0.1580471659081506,
+    "complete_miss": 0.6152254861398427,
+    "low_overlap": 0.05502689284236657,
+    "partial": 0.09846917666528755,
+    "near_miss": 0.07074886222589988,
+    "verbose": 0.0024824162184526274,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_IRCoT": {
+    "correct": 0.21721141911460487,
+    "complete_miss": 0.4968969797269342,
+    "low_overlap": 0.03806371534960695,
+    "partial": 0.14149772445179976,
+    "near_miss": 0.10012412081092263,
+    "verbose": 0.006206040546131568,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_REAP": {
+    "correct": 0.06950765411667356,
+    "complete_miss": 0.6992139015308233,
+    "low_overlap": 0.08936698386429458,
+    "partial": 0.08729830368225072,
+    "near_miss": 0.0517170045510964,
+    "verbose": 0.0028961522548613984,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  },
+  "musique_Recursive LM": {
+    "correct": 0.16466694249069094,
+    "complete_miss": 0.5618535374431113,
+    "low_overlap": 0.06040546131568059,
+    "partial": 0.12577575506826644,
+    "near_miss": 0.08522962350020687,
+    "verbose": 0.002068680182043856,
+    "loop": 0.0,
+    "yes_no_flip": 0.0
+  }
+}

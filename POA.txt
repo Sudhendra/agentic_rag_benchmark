@@ -1,0 +1,168 @@
+COMPASS Enhancement Plan — Target: ICML/AAAI 2027
+Strategic Overview
+Your two biggest assets are time (2027 deadline = months) and open-source models (solves reproducibility + cross-model simultaneously). The plan is organized into 10 phases, grouped into three waves:
+Wave	Phases	Goal	Timeline
+Wave 1: Complete the evidence	1-3	Fill experimental gaps, add statistical rigor	2-3 weeks
+Wave 2: Add the intellectual contribution	4-7	Theory section, thesis restructuring, novel metric	3-4 weeks
+Wave 3: Polish to "insanely good"	8-10	Human eval, code release, final consistency	2-3 weeks
+---
+Wave 1: Complete the Evidence
+Phase 1: Finish 2Wiki + Open-Source Model Grid
+The problem: Only 1/7 architectures run on 2Wiki. Reviewers demand 3+ datasets.
+The plan:
+- 2Wiki on gpt-4o-mini (subset, 2000q): 7 archs × 1 retriever (BM25, cheapest) = 7 runs ≈ $20-25. This gives you the third dataset for the main table.
+- 2Wiki on open-source models (full, 12,576q): Run via Groq (Llama-3.3-70B, free tier). 7 archs × 1 retriever. Free but slower.
+- Result: 2Wiki appears in the main results table with 3 models (gpt-4o-mini subset, Llama-3.3-70B full, +1 more).
+Budget impact: ~$25 of your $100
+Phase 2: Cross-Model Validation on 3+ Open-Source Models
+The problem: 94/97 runs use gpt-4o-mini. "Rankings hold across models" is based on 2 archs × 100q.
+The plan — run all 7 architectures on 3 open-source models (500q HotpotQA subset):
+Model	Provider	Size	Why this model
+Llama-3.3-70B	Groq (free)	Large	Already partially done; scale it up
+Llama-3.1-8B	Groq (free)	Small	Shows scaling effect within same family
+Qwen-2.5-72B	Together (~$0.01/q)	Large, different family	Different architecture family
+This gives you a 4-model comparison (gpt-4o-mini + 3 open) spanning:
+- Closed vs. open
+- Small (8B) vs. large (70B+)
+- Different families (GPT, Llama, Qwen)
+The killer analysis: If any architecture ranking flips across models, that's the most publishable finding possible. "ReAct beats Vanilla on GPT-4o-mini but loses on Llama-8B" would be a headline result.
+Budget impact: ~$10-15 (Qwen via Together; Llama via Groq is free)
+Phase 3: Statistical Rigor
+The problem: Only bootstrap CIs. No paired tests, no seeds, no multiple-comparison correction.
+The plan — three additions:
+1. Paired significance tests: Since all architectures run on the same questions, use McNemar's test (for EM, binary correct/incorrect) and paired bootstrap (for F1). Compute a 7×7 pairwise significance matrix. This is the correct statistical tool and reviewers will specifically look for it.
+2. Multiple seeds (3 seeds, top 4 archs, 500q): Run Vanilla, ReAct, IRCoT, RLM with seeds {42, 123, 456} on 500q. Report mean ± std. Cost: ~$15.
+3. Bonferroni correction: Apply across the 21 pairwise comparisons to control family-wise error rate.
+New script needed: scripts/significance_testing.py — loads per-question predictions from multiple runs, computes McNemar + paired bootstrap + significance matrix, exports heatmap figure.
+Budget impact: ~$15 for seeds
+---
+Wave 2: Add the Intellectual Contribution
+Phase 4: Theoretical Framework (THE KEY DIFFERENTIATOR)
+The problem: Zero formal analysis. This is the largest gap for ICML.
+The plan — three formal results, each motivated by your empirical data:
+Result 1: Quadratic Token Complexity for Agentic Loops
+Motivation: Your data shows ReAct consumes 14× more tokens than Vanilla. Finding 03 claims "quadratic scratchpad growth" but it's never proven.
+Theorem: Let an agentic RAG system execute $K$ iterations, where iteration $i$ produces $t_i$ tokens of reasoning and observation. The total token cost is:
+$$T(K) = \sum_{k=1}^{K} \left(|q| + \sum_{i=1}^{k-1} t_i\right) = K|q| + \sum_{i=1}^{K-1}(K-i) \cdot t_i$$
+For bounded step size $t_i \leq \bar{t}$, this gives $T(K) = O(K^2 \bar{t})$ — quadratic in iterations.
+Corollary: The cost per unit accuracy gain increases superlinearly: if accuracy saturates at iteration $K^*$ but the loop continues to $K > K^*$, the marginal cost is $O(K \bar{t})$ per wasted iteration with zero accuracy gain.
+Validation: Plot predicted $O(K^2)$ vs. actual token consumption from the ReAct iteration ablation (3/7/10). The fit should be tight.
+Result 2: RLM Termination Analysis
+Motivation: Your data shows 3.4% of RLM runs enter infinite loops. This is a formalizable pathology.
+Definitions:
+- A decomposition function $d: \mathcal{Q} \to \mathcal{P}(\mathcal{Q})$ maps a question to sub-questions
+- The decomposition graph $G_d(q)$ has edges $q \to q'$ when $q' \in d(q)$
+Theorem (Termination): RLM terminates for question $q$ if and only if $G_d(q)$ is a directed acyclic graph (DAG).
+Corollary (Bounded recursion): With depth limit $D$ and max branching factor $b$, RLM always terminates in at most $\sum_{i=0}^{D} b^i = O(b^D)$ LLM calls.
+Empirical connection: The 3.4% loop rate = $\Pr[G_d(q) \text{ contains a cycle}]$ under gpt-4o-mini. This varies by model — the cross-model loop rate becomes an interesting diagnostic.
+Result 3: Retrieval Sufficiency Bound
+Motivation: Your top-k ablation shows a sharp knee at top_k=10 for 2-hop questions. This is predictable.
+Model: For a $k$-hop question, let $r_i$ be the retrieval rank of the $i$-th evidence document. Assume $r_i \sim \text{Geometric}(p)$ i.i.d. (each document at each rank has probability $p$ of being the correct evidence).
+Theorem: The probability that Vanilla RAG retrieves all $k$ evidence documents in the top-$n$ results is:
+$$P_{\text{succ}}(n, k) = \left(1 - (1-p)^n\right)^k$$
+Corollary: For 2-hop questions ($k=2$), the accuracy gain from increasing top-$n$ from 5 to 10 is:
+$$\Delta P = \left(1-(1-p)^{10}\right)^2 - \left(1-(1-p)^5\right)^2$$
+Validation: Fit $p$ from the top_k=3 data point, predict the top_k=5/10/20 curve, compare to actual. If the fit is good, this is a predictive theoretical model for retrieval depth — novel and useful.
+Paper structure: New §4 "Theoretical Analysis" with three subsections, each a theorem + proof + empirical validation. This transforms the paper from "empirical report" to "principled analysis with empirical validation."
+Phase 5: Equal-Compute Pareto + Component Ablations
+Equal-compute normalization:
+- Replot the Pareto frontier with accuracy at equal token budget (not equal $cost, which varies by model pricing)
+- For each architecture, find the accuracy at token budget = 700 tokens/question (Vanilla's budget)
+- This answers: "if every architecture had Vanilla's compute, who wins?"
+- Hypothesis: Vanilla wins outright, making the "complexity doesn't help" thesis airtight
+Component-level ablations (3 key architectures):
+- Self-RAG without reflection tokens → does reflection help or hurt?
+- RLM with depth=1 (no recursion) → isolates decomposition from recursion
+- IRCoT with single retrieval (no interleaving) → isolates interleaving benefit
+Cost: ~$20-30 for these runs on 500q
+Phase 6: Reconcile All Data Inconsistencies
+The problem: Error taxonomy numbers conflict across docs/paper. Scale conflation (50q cited next to 7405q). This is a reproducibility red flag.
+The plan:
+1. Create a single source of truth script (scripts/generate_paper_tables.py) that reads from results/*/summary.json and generates every table/number in the paper
+2. Recompute the error taxonomy from the actual predictions.jsonl files
+3. Tag every number with its sample size (n=X) in the paper
+4. Ensure full_stats_table.csv, the .tex tables, and the findings docs all agree
+Phase 7: Paper Restructuring Around Central Thesis
+The new paper structure:
+1. Introduction (thesis: "architectural complexity is unjustified for 
+   multi-hop QA under equal-compute normalization")
+2. Related Work
+3. The COMPASS Framework
+   3.1 Paradigm Definitions (formal)
+   3.2 Architectures
+   3.3 Datasets (3: HotpotQA, MuSiQue, 2Wiki)
+   3.4 Evaluation Metrics
+4. Theoretical Analysis  ← NEW SECTION
+   4.1 Token Complexity of Agentic Loops (Theorem 1)
+   4.2 Termination Analysis for RLM (Theorem 2)
+   4.3 Retrieval Sufficiency Bound (Theorem 3)
+5. Experimental Setup
+6. Results
+   6.1 Main Results (3 datasets × 4 models)
+   6.2 Cost-Performance Analysis (equal-compute Pareto)
+   6.3 Cross-Model Generalization (4 models, ranking analysis)
+   6.4 Statistical Significance (McNemar matrix)
+   6.5 Prompt Sensitivity (prompt tax as architectural property)
+   6.6 Robustness Ablations
+7. Analysis
+   7.1 Error Taxonomy
+   7.2 Hop-Stratified Analysis
+   7.3 Component Ablations
+8. Discussion
+9. Limitations
+10. Conclusion
+Key changes from current draft:
+- Abstract rewritten around the thesis
+- New §4 (Theory) — the intellectual contribution
+- 26 "Key Findings" cut to ~12, all serving the thesis
+- Cross-model section expanded from 1 paragraph to a full subsection
+- Significance testing integrated into the results, not an afterthought
+---
+Wave 3: Polish to "Insanely Good"
+Phase 8: Human Evaluation (100-200q)
+The plan: Annotate 100-200 questions from HotpotQA with:
+- Human gold answers (to check dataset quality)
+- Answer quality rating (correct/partial/incorrect) for top 4 architectures
+- This anchors your metrics in human judgement — reviewers love this
+Even small-n human eval changes reviewer perception from "API calls" to "real task understanding."
+Phase 9: Novel Diagnostic Metric — Prompt Sensitivity Coefficient
+The idea: Formalize "prompt sensitivity" as a reusable metric that other researchers can compute for their architectures.
+Definition: The Prompt Sensitivity Coefficient (PSC) of an architecture $\mathcal{A}$ is:
+$$\text{PSC}(\mathcal{A}) = \frac{\max_{v \in V} \text{EM}(v) - \min_{v \in V} \text{EM}(v)}{\text{EM}(\text{default})}$$
+where $V$ is the set of prompt variants tested.
+This gives you a novel contribution that others can adopt — IRCoT has PSC=0.19, ReAct has PSC=0.88, RLM has PSC=0.69. A reviewer can't say "just an engineering report" when you've introduced a new metric.
+Phase 10: Reproducibility Package
+The plan:
+- Release all cached LLM responses (SQLiteCache → public dump)
+- Release all prompts, configs, seeds
+- Release the COMPASS framework as a pip-installable package
+- Create a REPRODUCING.md with exact commands
+- Consider a persistent leaderboard (GitHub Pages site)
+This makes the paper a community resource, not just a one-time study.
+---
+Budget Breakdown
+Item	Cost	Source
+2Wiki subset (2000q, 7 archs, gpt-4o-mini)	~$25	OpenAI
+Cross-model (Qwen-2.5-72B, 500q, 7 archs)	~$15	Together AI
+Seeds (3 seeds × 4 archs × 500q, gpt-4o-mini)	~$15	OpenAI
+Component ablations (3 archs × 500q)	~$20	OpenAI
+Llama-3.3-70B + Llama-3.1-8B runs	$0	Groq (free tier)
+Human evaluation	$0	You annotate
+Total	~$75	Within $100 budget
+---
+What This Buys You
+Reviewer concern	Current state	After this plan
+"Single model"	94/97 gpt-4o-mini	4 models (1 closed, 3 open)
+"Only 2 datasets"	HotpotQA + MuSiQue	+ 2Wiki = 3 datasets
+"No theory"	Zero	3 theorems with empirical validation
+"No significance"	Bootstrap CIs only	McNemar + paired bootstrap + seeds + Bonferroni
+"No central insight"	26 findings	1 thesis + 12 supporting findings
+"Not reproducible"	Closed API only	Cached responses + open models + code release
+"Conflated compute"	Raw $cost	Equal-token-budget Pareto
+"No human eval"	None	100-200q human-annotated
+"No novel metric"	None	Prompt Sensitivity Coefficient
+"Data inconsistent"	Conflicting numbers	Single source-of-truth script
+---
+Recommended Next Step
+The highest-impact, lowest-cost starting point is Phase 4 (Theory) — it requires no API budget, it's the biggest differentiator for ICML, and it shapes how the rest of the paper is structured. I can start drafting the three theorems with proofs and empirical validation plans.
+Alternatively, if you want to start with experiments (Phase 1-3), the 2Wiki runs and Groq cross-model runs can proceed in parallel while we work on theory.

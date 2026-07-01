@@ -1,0 +1,9 @@
+Question: {question}
+
+Evidence:
+{context}
+
+Reasoning:
+{reasoning_history}
+
+Write one reasoning sentence or [ANSWER] <answer>.

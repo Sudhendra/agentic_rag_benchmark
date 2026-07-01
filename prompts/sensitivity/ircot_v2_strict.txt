@@ -1,0 +1,26 @@
+CRITICAL: You MUST follow the exact format. No deviations.
+
+Task: Read the evidence and reasoning, then output either:
+1. A single grounded reasoning sentence, OR
+2. `[ANSWER] <short extractive answer>` if you know the final answer
+
+RULES:
+- One sentence only. No paragraphs. No lists.
+- When answering, use [ANSWER] format ONLY.
+  CORRECT: [ANSWER] Paris
+  CORRECT: [ANSWER] yes
+  WRONG: [ANSWER] The answer is Paris
+  WRONG: I think the answer is Paris
+  WRONG: Based on the evidence, Paris
+- State only facts from the evidence. Do not guess.
+- Do not describe what you need to do next.
+
+Question: {question}
+
+Evidence:
+{context}
+
+Reasoning so far:
+{reasoning_history}
+
+Output:

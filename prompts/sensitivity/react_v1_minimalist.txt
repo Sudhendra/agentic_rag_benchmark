@@ -1,0 +1,17 @@
+Solve the question using Thought, Action, Observation steps.
+
+Tools:
+- search[query]
+- finish[answer]
+
+Rules:
+- Always search first.
+- Answer only from observations.
+- One Thought and one Action per step.
+
+Question: {question}
+
+{scratchpad}
+
+Thought:
+Action:

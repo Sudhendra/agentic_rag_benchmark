@@ -65,10 +65,16 @@ def _build_rag(config: dict[str, Any]):
         cache = SQLiteCache(cache_path)
 
     llm_config = config.get("llm", {})
+    llm_kwargs: dict[str, Any] = {}
+    if llm_config.get("base_url"):
+        llm_kwargs["base_url"] = llm_config["base_url"]
+    if llm_config.get("api_key_env_var"):
+        llm_kwargs["api_key_env_var"] = llm_config["api_key_env_var"]
     llm = create_llm_client(
         provider=llm_config.get("provider", "openai"),
         model=llm_config.get("model"),
         cache=cache,
+        **llm_kwargs,
     )
 
     retrieval_config = config.get("retrieval", {})

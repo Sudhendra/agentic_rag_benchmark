@@ -1,0 +1,42 @@
+inherits: base.yaml
+
+# REAP with gpt-4o on 200 HotpotQA questions — model-strength investigation.
+#
+# Purpose: Test whether the 31pp gap between our REAP (28.1% EM with gpt-4o-mini)
+# and the paper's reported 59.2% is primarily due to model capability.
+#
+# Hypothesis: If gpt-4o reaches ≥45% EM here, model strength is the primary cause.
+# If it stays below ~38% EM, the gap is likely implementation/prompt quality.
+#
+# Estimated cost: ~$5 (200q × ~$0.025/q with gpt-4o)
+
+experiment:
+  name: "reap_gpt4o_200q"
+
+architecture:
+  name: "reap_rag"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.0
+  max_tokens: 1024
+
+reap:
+  max_iterations: 5
+  max_active_requirements: 2
+  max_context_tokens: 3000
+  max_docs: 8
+
+retrieval:
+  method: "bm25"
+  top_k: 3
+
+evaluation:
+  max_concurrency: 2
+
+data:
+  dataset: "hotpotqa"
+  setting: "distractor"
+  split: "validation"
+  subset_size: 200
