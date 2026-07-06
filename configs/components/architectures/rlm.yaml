@@ -1,0 +1,10 @@
+architecture:
+  name: "recursive_lm"
+
+rlm:
+  max_depth: 3
+  memoization: true
+  max_context_tokens: 4000
+
+retrieval:
+  top_k: 5

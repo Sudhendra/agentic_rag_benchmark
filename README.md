@@ -4,6 +4,17 @@ Benchmarking AgenticRAG systems and its viability in the face of long context op
 
 **Target:** ACL/NAACL 2026 publication
 
+## Config-Driven Benchmarks
+
+This project supports reproducible benchmark suites through YAML matrices in `configs/suites/`.
+
+```bash
+python scripts/run_suite.py --suite configs/suites/dev_smoke.yaml --dry-run
+python scripts/run_suite.py --suite configs/suites/dev_smoke.yaml --yes --skip-existing
+```
+
+See `docs/CONFIG_DRIVEN_BENCHMARKS.md` for suite structure, filters, and reproducibility notes.
+
 ## Current Results
 
 ### Vanilla RAG Baseline (HotpotQA Full Validation - 7,405 questions)

@@ -1,0 +1,5 @@
+architecture:
+  name: "vanilla_rag"
+
+vanilla:
+  prompt_path: "prompts/vanilla.txt"

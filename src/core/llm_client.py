@@ -167,11 +167,9 @@ class OpenAIClient(BaseLLMClient):
     def _calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost in USD for the given token counts.
 
-        Returns 0.0 for models not in the pricing table (e.g. free-tier providers).
+        Uses gpt-4o-mini pricing as a conservative fallback for unknown models.
         """
-        pricing = self.PRICING.get(self.model)
-        if pricing is None:
-            return 0.0
+        pricing = self.PRICING.get(self.model, self.PRICING["gpt-4o-mini"])
         input_cost = (input_tokens / 1_000_000) * pricing["input"]
         output_cost = (output_tokens / 1_000_000) * pricing["output"]
         return input_cost + output_cost

@@ -1,0 +1,5 @@
+data:
+  dataset: "hotpotqa"
+  setting: "distractor"
+  split: "validation"
+  subset_size: null
