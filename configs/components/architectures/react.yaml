@@ -1,0 +1,5 @@
+architecture:
+  name: "react_rag"
+
+react:
+  max_iterations: 7

@@ -1,0 +1,29 @@
+suite:
+  name: "dev_smoke"
+  description: "Small local sanity suite before launching full API-costly benchmarks."
+  output_dir: "results/dev_smoke"
+  base_config: "../base.yaml"
+
+  defaults:
+    experiment:
+      seed: 42
+    evaluation:
+      max_concurrency: 2
+      compute_supporting_facts: false
+
+  matrix:
+    architecture:
+      - "../components/architectures/vanilla.yaml"
+      - "../components/architectures/ircot.yaml"
+      - "../components/architectures/rlm.yaml"
+    dataset:
+      - "../components/datasets/hotpotqa_dev.yaml"
+    retriever:
+      - "../components/retrievers/bm25.yaml"
+    model:
+      - "../components/models/gpt4o_mini.yaml"
+
+  run:
+    max_concurrency_across_runs: 1
+    skip_existing: true
+    require_confirmation: true

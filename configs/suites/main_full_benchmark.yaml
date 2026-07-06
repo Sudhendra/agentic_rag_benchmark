@@ -1,0 +1,40 @@
+suite:
+  name: "main_full_benchmark"
+  description: "Full architecture x dataset x retriever benchmark for paper results."
+  output_dir: "results/main_full_benchmark"
+  base_config: "../base.yaml"
+
+  defaults:
+    experiment:
+      seed: 42
+    cache:
+      enabled: true
+      path: ".cache/llm_cache.db"
+    evaluation:
+      compute_supporting_facts: true
+      save_predictions: true
+
+  matrix:
+    architecture:
+      - "../components/architectures/vanilla.yaml"
+      - "../components/architectures/react.yaml"
+      - "../components/architectures/self_rag.yaml"
+      - "../components/architectures/planner.yaml"
+      - "../components/architectures/ircot.yaml"
+      - "../components/architectures/reap.yaml"
+      - "../components/architectures/rlm.yaml"
+    dataset:
+      - "../components/datasets/hotpotqa_full.yaml"
+      - "../components/datasets/musique_full.yaml"
+      - "../components/datasets/2wiki_full.yaml"
+    retriever:
+      - "../components/retrievers/bm25.yaml"
+      - "../components/retrievers/dense.yaml"
+      - "../components/retrievers/hybrid.yaml"
+    model:
+      - "../components/models/gpt4o_mini.yaml"
+
+  run:
+    max_concurrency_across_runs: 1
+    skip_existing: true
+    require_confirmation: true

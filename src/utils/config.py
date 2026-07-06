@@ -19,7 +19,19 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
 def load_config(path: Path) -> dict[str, Any]:
     data = yaml.safe_load(Path(path).read_text()) or {}
     if "inherits" in data:
-        base_path = Path(path).parent / data.pop("inherits")
-        base = load_config(base_path)
+        inherits = data.pop("inherits")
+        if isinstance(inherits, (str, Path)):
+            inherit_paths = [inherits]
+        elif isinstance(inherits, list):
+            inherit_paths = inherits
+        else:
+            raise TypeError("inherits must be a string or list of strings")
+
+        base: dict[str, Any] = {}
+        for inherit_path in inherit_paths:
+            resolved_path = Path(inherit_path)
+            if not resolved_path.is_absolute():
+                resolved_path = Path(path).parent / resolved_path
+            base = deep_merge(base, load_config(resolved_path))
         return deep_merge(base, data)
     return data

@@ -1,0 +1,5 @@
+architecture:
+  name: "self_rag"
+
+self_rag:
+  num_candidates: 3
